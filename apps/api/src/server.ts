@@ -14,6 +14,18 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/session/:id", (req, res) => {
+  const sessionId = String(req.params.id);
+  const state = loadSession(sessionId);
+
+  if (!state) {
+    res.status(404).json({ error: "session not found", sessionId });
+    return;
+  }
+
+  res.json({ state });
+});
+
 app.post("/turn", (req, res) => {
   const sessionId: string = req.body?.sessionId ?? randomUUID();
   const action: string = String(req.body?.action ?? "").trim();

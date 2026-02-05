@@ -3,3 +3,37 @@
 /* .response.error { background: #ffe5e5; } */
 .response.loading { opacity: 0.8; }
 textarea { width: 100%; }
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.msg {
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.msg-role {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.msg-text {
+  white-space: pre-wrap;
+}
+
+.msg-gm {
+  background: rgba(120, 120, 120, 0.15);
+}
+
+.msg-user {
+  background: rgba(80, 140, 255, 0.18);
+}
+
+.hint {
+  opacity: 0.7;
+  padding: 8px 0;
+}

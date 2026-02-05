@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import "./App.css";
-import { postTurn } from "./api";
+import { getSession, postTurn, type GameState } from "./api";
 
 const THEMES = [
   { id: "gothic", label: "Gothic", href: "/themes/gothic-library.css" },
@@ -9,20 +9,29 @@ const THEMES = [
   { id: "journey", label: "Journey", href: "/themes/dark-journey.css" },
 ];
 
-const SESSION_KEY = "game:sessionId";
+
 
 export default function App() {
+  const [themeHref, setThemeHref] = useState("/themes/gothic-library.css");
   const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
-
-  const [themeHref, setThemeHref] = useState("/themes/gothic-library.css");
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const SESSION_KEY = "game:sessionId";
 
   useEffect(() => {
     const el = document.getElementById("theme-link") as HTMLLinkElement | null;
     if (el) el.href = themeHref;
     fetch("/api/health").then(r => r.json()).then(console.log);
+
+    const savedSessionId = localStorage.getItem(SESSION_KEY);
+    if (!savedSessionId) return;
+
+    setLoading(true);
+    getSession(savedSessionId)
+    .then((data) => setGameState(data.state))
+    .catch(() => {})
+    .finally(() => setLoading(false));
   }, [themeHref]);
 
   function switchTheme(href: string) {
@@ -38,18 +47,17 @@ export default function App() {
 
     setLoading(true);
     try {
-      const savedSessionId = localStorage.getItem(SESSION_KEY); // getItem/setItem [web:182]
-      const data = await postTurn({ sessionId: savedSessionId ?? undefined, action: prompt.trim() });
+      const savedSessionId = localStorage.getItem(SESSION_KEY);
+      const data = await postTurn({
+        sessionId: savedSessionId ?? undefined,
+        action: prompt.trim()
+      });
 
-      localStorage.setItem(SESSION_KEY, data.state.sessionId); // setItem [web:182]
+      localStorage.setItem(SESSION_KEY, data.state.sessionId); 
 
-      // Покажем весь лог как текст (быстро для MVP)
-      const text = data.state.log
-        .map((x) => (x.role === "gm" ? `GM: ${x.text}` : `YOU: ${x.text}`))
-        .join("\n\n");
-
-        setResponse(text);
-        setPrompt("");
+      localStorage.setItem(SESSION_KEY, data.state.sessionId);
+      setGameState(data.state);
+      setPrompt("");
     } catch (e: any) {
       setError(e?.message ?? "Ошибка запроса");
     } finally {
@@ -89,13 +97,14 @@ export default function App() {
         <button onClick={sendRequest} disabled={loading}>
           {loading ? "Отправка..." : "Отправить"}
         </button>
-        <button onClick={() => { setPrompt(""); setResponse(""); setError(""); }} style={{ marginLeft: 8 }}>
+        <button onClick={() => { setPrompt("") }} style={{ marginLeft: 8 }}>
           Очистить
         </button>
         <button
           onClick={() => {
             localStorage.removeItem(SESSION_KEY);
-            setResponse("");
+            setGameState(null);
+            setPrompt("");
             setError("");
           }}
           style={{ marginLeft: 8 }}
@@ -113,8 +122,10 @@ export default function App() {
                 setError("Нет сохранённой сессии. Нажми 'Новая игра' и сделай первый ход.");
                 return;
               }
-              // “пустой ход” не разрешён на бэке, поэтому просто покажем что сессия есть
-              setResponse(`Сессия найдена: ${savedSessionId}\nСделай следующий ход в поле ввода.`);
+              const data = await getSession(savedSessionId);
+              setGameState(data.state);
+            } catch (e: any) {
+              setError(e?.message ?? "Ошибка загрузки сессии");
             } finally {
               setLoading(false);
             }
@@ -125,9 +136,20 @@ export default function App() {
         </button>
 
         <div style={{ marginTop: 12 }}>
+          <div className="chat">
+            {!gameState && !loading && (
+              <div className="hint">Нажми «Новая игра» и сделай первый ход.</div>
+            )}
+
+            {gameState?.log.map((m, idx) => (
+              <div key={`${m.at}-${idx}`} className={m.role === "gm" ? "msg msg-gm" : "msg msg-user"}>
+                <div className="msg-role">{m.role === "gm" ? "GM" : "YOU"}</div>
+                <div className="msg-text">{m.text}</div>
+              </div>
+            ))}
+          </div>
           {error && <div className="response error">{error}</div>}
-          {response && <div className="response">{response}</div>}
-          {loading && !response && !error && <div className="response loading">Загрузка...</div>}
+          {loading && !gameState && !error && <div className="response loading">Загрузка...</div>}
         </div>
       </div>
     </div>
