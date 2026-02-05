@@ -1,0 +1,71 @@
+body {
+    font-family: 'Spectral', 'Georgia', serif;
+    background: #2a2621 url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+    color: #e9e5cb;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 24px;
+}
+.container {
+    background: #ece2c6 url('https://www.transparenttextures.com/patterns/symphony.png');
+    padding: 32px;
+    border-radius: 18px;
+    box-shadow: 0 2px 20px rgba(117,99,37,.13);
+    border: 2.5px solid #b8a879;
+    color: #372e23;
+}
+.api-key-section {
+    background: #dfd0ae;
+    border-left: 7px solid #b8a879;
+    padding: 15px;
+    border-radius: 7px;
+    margin-bottom: 18px;
+    color: #322219;
+    box-shadow: 0 2px 8px rgba(176,150,76,0.14);
+}
+input, textarea {
+    background: #f4eacc;
+    color: #332216;
+    font-family: inherit;
+    border: 1px solid #b8a879;
+    border-radius: 7px;
+    padding: 12px;
+}
+input:focus, textarea:focus {
+    border: 1.5px solid #927a41;
+    background: #f6e5bb;
+}
+button {
+    background: #cfbc92;
+    color: #2d1d12;
+    border: 1px solid #b8a879;
+    border-radius: 9px;
+    font-size: 16px;
+    font-family: inherit;
+    margin: 7px;
+    padding: 13px 27px;
+    box-shadow: 0 2px 6px rgba(110,88,48,0.09);
+}
+button:hover {
+    background: #b8a879;
+    color: #372e23;
+}
+.response {
+    background: #e9dac8 url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+    border-left: 3px solid #b8a879;
+    color: #312417;
+    margin-top: 20px;
+    border-radius: 7px;
+    padding: 14px 18px;
+    font-family: 'Spectral',serif;
+}
+.error {
+    background: #eebfb4;
+    color: #6c261c;
+    border-left-color: #c05437;
+}
+h1, h3, h4 {
+    color: #c0a97a;
+    font-family: 'Spectral','Georgia',serif;
+    text-shadow: 0 2px 9px #f6e5bb88;
+}

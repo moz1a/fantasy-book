@@ -1,0 +1,62 @@
+body {
+    font-family: 'PT Serif', serif;
+    background: #222516 url('https://www.transparenttextures.com/patterns/rebel.png');
+    color: #dcc69e;
+    margin: 0 auto; max-width: 820px; padding: 22px;
+}
+.container {
+    background: #302a1e url('https://www.transparenttextures.com/patterns/rough-cloth.png');
+    padding: 30px;
+    border-radius: 13px;
+    box-shadow: 0 6px 18px rgba(44,31,16,0.23);
+    border: 2px solid #a8956c;
+}
+.api-key-section {
+    background: #29251c;
+    border-left: 7px solid #b09f79;
+    color: #dcc69e;
+    padding: 13px;
+    border-radius: 8px;
+}
+input, textarea {
+    background: #3f392c;
+    color: #dcc69e;
+    border: 1px solid #a8956c;
+    border-radius: 6px; padding: 11px;
+    font-family: inherit;
+}
+input:focus, textarea:focus {
+    border: 1.5px solid #dac498;
+    background: #473d29;
+}
+button {
+    background: #a8956c;
+    color: #302a1e;
+    border: 1px solid #dac498;
+    border-radius: 7px;
+    font-size: 15px;
+    margin: 7px;
+    padding: 12px 21px;
+    box-shadow: 0 2px 8px rgba(96,81,52,0.06);
+    font-family: inherit;
+}
+button:hover { background: #dac498; color: #403317; }
+.response {
+    background: #383221;
+    border-left: 3px solid #dac498;
+    color: #dac498;
+    margin-top: 19px;
+    border-radius: 7px;
+    padding: 13px 16px;
+    font-size: 1.08em;
+}
+.error {
+    background: #412920;
+    color: #fed3bb;
+    border-left-color: #ba5847;
+}
+h1, h3, h4 {
+    color: #dac498;
+    font-family: 'PT Serif',serif;
+    text-shadow: 0 2px 8px #24190f99;
+}
