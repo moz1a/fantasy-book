@@ -55,7 +55,6 @@ export default function App() {
 
       localStorage.setItem(SESSION_KEY, data.state.sessionId); 
 
-      localStorage.setItem(SESSION_KEY, data.state.sessionId);
       setGameState(data.state);
       setPrompt("");
     } catch (e: any) {
@@ -67,7 +66,8 @@ export default function App() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.ctrlKey && e.key === "Enter") sendRequest();
+      if (e.ctrlKey && e.key === "Enter") 
+        sendRequest();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -86,7 +86,7 @@ export default function App() {
       <div className="container">
         <h1>Fantasy book</h1>
 
-        <h3>Prompt</h3>
+        <h3>Ваш ход</h3>
         <textarea
           rows={4}
           value={prompt}
