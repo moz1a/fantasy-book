@@ -1,9 +1,4 @@
-.container { max-width: 900px; margin: 0 auto; }
-.response { white-space: pre-wrap; padding: 12px; border-radius: 8px; }
-/* .response.error { background: #ffe5e5; } */
-.response.loading { opacity: 0.8; }
-textarea { width: 100%; }
-.chat {
+﻿.chat {
   display: flex;
   flex-direction: column;
   gap: 12px;

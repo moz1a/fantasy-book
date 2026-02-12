@@ -1,0 +1,16 @@
+﻿.app {
+  padding: 16px;
+}
+
+.app__theme-switcher {
+  margin: 20px 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.app__content {
+  margin-top: 12px;
+}

@@ -1,0 +1,9 @@
+﻿.response {
+  white-space: pre-wrap;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.response.loading {
+  opacity: 0.8;
+}

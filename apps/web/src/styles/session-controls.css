@@ -1,0 +1,7 @@
+﻿.session-controls {
+  margin-top: 8px;
+}
+
+.session-controls__button + .session-controls__button {
+  margin-left: 8px;
+}

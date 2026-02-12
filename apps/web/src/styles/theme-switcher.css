@@ -1,0 +1,7 @@
+﻿.theme-switcher {
+  text-align: center;
+}
+
+.theme-switcher__button + .theme-switcher__button {
+  margin-left: 8px;
+}
