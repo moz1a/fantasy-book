@@ -25,8 +25,6 @@ db.pragma("journal_mode = WAL"); // [web:115]
 db.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
-    state_json TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    state_json TEXT NOT NULL
   );
 `);

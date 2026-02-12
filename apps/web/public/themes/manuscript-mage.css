@@ -1,9 +1,7 @@
-body {
+/* body {
     font-family: 'Spectral', 'Georgia', serif;
     background: #2a2621 url('https://www.transparenttextures.com/patterns/paper-fibers.png');
     color: #e9e5cb;
-    max-width: 820px;
-    margin: 0 auto;
     padding: 24px;
 }
 .container {
@@ -13,6 +11,7 @@ body {
     box-shadow: 0 2px 20px rgba(117,99,37,.13);
     border: 2.5px solid #b8a879;
     color: #372e23;
+      max-width: 820px;
 }
 .api-key-section {
     background: #dfd0ae;
@@ -68,4 +67,4 @@ h1, h3, h4 {
     color: #c0a97a;
     font-family: 'Spectral','Georgia',serif;
     text-shadow: 0 2px 9px #f6e5bb88;
-}
+} */

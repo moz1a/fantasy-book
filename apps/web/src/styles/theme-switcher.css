@@ -1,7 +1,21 @@
 ﻿.theme-switcher {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.theme-switcher__button + .theme-switcher__button {
-  margin-left: 8px;
+.theme-switcher__button {
+  border: 1px solid #d9b57f;
+  background: linear-gradient(180deg, #f8e4ba, #d2a870);
+  color: #2f1c0b;
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+
+.theme-switcher__button:hover {
+  background: linear-gradient(180deg, #fdeecf, #ddb57e);
 }

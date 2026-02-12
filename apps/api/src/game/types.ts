@@ -1,7 +1,14 @@
+﻿export type Choice = {
+  id: string;
+  text: string;
+};
+
 export type GameState = {
   version: 1;
   sessionId: string;
   worldSummary: string;
+  prompt: string;
+  choices: Choice[];
   player: {
     name: string;
     hp: number;
@@ -9,15 +16,16 @@ export type GameState = {
     inventory: string[];
     location: string;
   };
-  log: { at: string; role: "user" | "gm"; text: string }[];
+  log: { role: "user" | "gm"; text: string }[];
 };
 
 export function createNewState(sessionId: string): GameState {
-  const now = new Date().toISOString();
   return {
     version: 1,
     sessionId,
-    worldSummary: "Ты в начале приключения.",
+    worldSummary: "Ты просыпаешься в таверне.",
+    prompt: "Что ты делаешь?",
+    choices: [],
     player: {
       name: "Герой",
       hp: 10,
@@ -25,6 +33,6 @@ export function createNewState(sessionId: string): GameState {
       inventory: [],
       location: "Таверна",
     },
-    log: [{ at: now, role: "gm", text: "Ты просыпаешься в таверне. Что делаешь?" }],
+    log: [{ role: "gm", text: "Ты просыпаешься в таверне. Что делаешь?" }],
   };
 }

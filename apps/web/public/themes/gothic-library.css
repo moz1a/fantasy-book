@@ -1,17 +1,17 @@
-body {
+/* body {
     font-family: 'Lora', 'Georgia', serif;
     background: #222117 url('https://www.transparenttextures.com/patterns/wood.png');
     color: #f0e1d2;
-    max-width: 820px;
-    margin: 0 auto;
     padding: 24px;
+    margin: 0;
 }
 .container {
+    max-width: 1420px;
     background: rgba(38,30,20,0.93);
     padding: 34px;
     border-radius: 18px;
     border: 2px solid #482d15;
-    box-shadow: 0 8px 32px rgba(64,45,31,0.33);
+    box-shadow: 0 8px 32px rgba(64,45,31,0.33); 
 }
 .api-key-section {
     background: #46311f;
@@ -66,4 +66,4 @@ h1, h3, h4 {
     color: #e4d5b9;
     font-family: 'Lora','Georgia',serif;
     text-shadow: 0 3px 10px #3a211577;
-}
+} */

@@ -1,7 +1,19 @@
 ﻿.session-controls {
-  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }
 
-.session-controls__button + .session-controls__button {
-  margin-left: 8px;
+.session-controls__button {
+  border: 1px solid #8b5e36;
+  background: linear-gradient(180deg, #f4ddb2, #d8b479);
+  color: #2f1b0a;
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.session-controls__button:hover {
+  background: linear-gradient(180deg, #f8e7c5, #dfbe86);
 }

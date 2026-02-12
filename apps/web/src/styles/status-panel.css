@@ -1,7 +1,16 @@
 ﻿.response {
+  margin-top: 10px;
   white-space: pre-wrap;
-  padding: 12px;
+  padding: 10px;
   border-radius: 8px;
+  border: 1px solid #9f6f3d;
+  background: rgba(248, 232, 202, 0.8);
+}
+
+.response.error {
+  border-color: #87431f;
+  background: rgba(200, 116, 82, 0.2);
+  color: #5d1f13;
 }
 
 .response.loading {
