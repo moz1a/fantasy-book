@@ -1,8 +1,5 @@
 ﻿type ApiError = { error?: string };
 
-export type LogItem = { at: string; role: "user" | "gm"; text: string };
-export type Choice = { id: string; text: string };
-
 export type PlayerState = {
   name: string;
   hp: number;
@@ -11,16 +8,33 @@ export type PlayerState = {
   location: string;
 };
 
-export type GameState = {
-  version: 1;
-  sessionId: string;
-  worldSummary: string;
-  prompt: string;
-  choices: Choice[];
-  player: PlayerState;
-  log: LogItem[];
+export type Choice = { id: string; text: string };
+
+export type Patch = {
+  hp?: number | undefined;
+  gold?: number | undefined;
+  location?: string | undefined;
+  addItems?: string[] | undefined;
+  removeItems?: string[] | undefined;
 };
 
+export type Turn = {
+  id: string;
+  action: string;
+  narrative: string;
+  prompt: string;
+  choices: Choice[];
+  worldSummary: string;
+  patch: Patch;
+};
+
+export type GameState = {
+  version: number;
+  sessionId: string;
+  worldSummary: string;
+  player: PlayerState;
+  turns: Turn[];
+};
 export type TurnResponse = { state: GameState };
 
 async function readJson(res: Response): Promise<unknown> {
@@ -49,6 +63,17 @@ export async function postTurn(params: { sessionId?: string; action: string }) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  return data as TurnResponse;
+}
+
+export async function createSession() {
+  const res = await fetch("/api/session", {
+    method: "POST",
   });
 
   const data = await readJson(res);

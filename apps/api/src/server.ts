@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import "dotenv/config";
 
-import { createNewState, type GameState } from "./game/types.js";
+import { createNewState, type GameState, type Patch } from "./game/types.js";
 import { loadSession, upsertSession } from "./db/sessionsRepo.js";
 import { pplxChat } from "./llm/perplexity.js";
 import { gmReplySchema } from "./game/gmSchema.js";
@@ -42,14 +42,14 @@ app.post("/turn", async (req, res) => {
 
     let state: GameState = loadSession(sessionId) ?? createNewState(sessionId);
 
-    state = {
-      ...state,
-      log: [...state.log, { role: "user", text: action }],
-    };
+    // state = {
+    //   ...state,
+    //   log: [...state.log, { role: "user", text: action }],
+    // };
 
-    const recent = state.log
+    const recent = state.turns
       .slice(-3)
-      .map((m) => `${m.role.toUpperCase()}: ${m.text}`)
+      .map((t) => `USER: ${t.action}\n\nGM: ${t.narrative}`)
       .join("\n\n");
 
     const system = [
@@ -109,17 +109,26 @@ app.post("/turn", async (req, res) => {
     console.log("VALIDATION", validation.data);
 
     const gm = validation.data;
-    const patch = gm.patch ?? {};
+    const patch: Patch = gm.patch ?? {};
 
     const inv = new Set(state.player.inventory);
     for (const it of patch.addItems ?? []) inv.add(it);
     for (const it of patch.removeItems ?? []) inv.delete(it);
 
+    const turn = {
+      id: randomUUID(),
+      at: Date.now(),
+      action,
+      narrative: gm.narrative,
+      prompt: gm.prompt,
+      choices: gm.choices,
+      worldSummary: gm.worldSummary,
+      patch,
+    };
+
     state = {
       ...state,
       worldSummary: gm.worldSummary,
-      prompt: gm.prompt,
-      choices: gm.choices,
       player: {
         ...state.player,
         hp: patch.hp ?? state.player.hp,
@@ -127,7 +136,7 @@ app.post("/turn", async (req, res) => {
         location: patch.location ?? state.player.location,
         inventory: Array.from(inv),
       },
-      log: [...state.log, { role: "gm", text: gm.narrative }],
+      turns: [...state.turns, turn],
     };
 
     upsertSession(state);
@@ -138,6 +147,15 @@ app.post("/turn", async (req, res) => {
     res.status(500).json({ error: message });
   }
 });
+
+app.post("/session", (_req, res) => {
+  const sessionId = randomUUID();
+  const state = createNewState(sessionId);
+
+  upsertSession(state);
+
+  res.json({ state });
+}); 
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 app.listen(PORT, () => {

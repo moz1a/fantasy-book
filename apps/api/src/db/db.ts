@@ -28,3 +28,5 @@ db.exec(`
     state_json TEXT NOT NULL
   );
 `);
+
+db.pragma("wal_checkpoint(FULL)");

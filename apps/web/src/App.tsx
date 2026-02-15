@@ -1,7 +1,7 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import HTMLFlipBook from "react-pageflip";
-import { getSession, postTurn, type GameState } from "./api";
+import { createSession, getSession, postTurn, type GameState } from "./api";
 import { ActionInput } from "./components/ActionInput";
 import { SessionControls } from "./components/SessionControls";
 import { StatusPanel } from "./components/StatusPanel";
@@ -76,33 +76,40 @@ export default function App() {
     }
   }
 
-  // useEffect(() => {
-  //   function onKeyDown(e: KeyboardEvent) {
-  //     if (e.ctrlKey && e.key === "Enter") sendRequest();
-  //   }
+  // const gmMessages = gameState?.log.filter((item) => item.role === "gm") ?? [];
+  // const choices = gameState?.choices ?? [];
+  // const choicePrompt = gameState?.prompt ?? "Что ты делаешь?";
+  // const responsePages = gmMessages.length > 0
+  //   ? gmMessages.map( item=> ( item.text ))
+  //   : [ EMPTY_RESPONSE ];
 
-  //   window.addEventListener("keydown", onKeyDown);
-  //   return () => window.removeEventListener("keydown", onKeyDown);
-  // }, [prompt]);
+  const turns = gameState?.turns ?? [];
 
-  const gmMessages = gameState?.log.filter((item) => item.role === "gm") ?? [];
-  const choices = gameState?.choices ?? [];
-  const choicePrompt = gameState?.prompt ?? "Что ты делаешь?";
-  const responsePages = gmMessages.length > 0
-    ? gmMessages.map( item=> ( item.text ))
-    : [ EMPTY_RESPONSE ];
+  const introSpread = {
+    id: "intro",
+    narrative: EMPTY_RESPONSE,
+    prompt: "Что ты делаешь?",
+    choices: [],
+    action: "",
+    worldSummary: "",
+    patch: {},
+  };
 
+  const spreads = [introSpread, ...turns];
+
+  const flipKey = `${gameState?.sessionId ?? "no-session"}:${turns.length}`;
   useEffect(() => {
-    if (!gmMessages.length) return;
+    if (!bookRef.current) return;
 
-    const pf = bookRef.current?.pageFlip?.();
-    if (!pf) return;
+    const timer = setTimeout(() => {
+      const pf = bookRef.current?.pageFlip?.();
+      if (!pf) return;
 
-    requestAnimationFrame(() => {
-      pf.update?.();
-      pf.flip(pf.getPageCount() - 1);
-    });
-  }, [gmMessages.length]);
+      pf.flip((spreads.length - 1) * 2);
+    }, 80);
+
+    return () => clearTimeout(timer);
+  }, [spreads.length]);
 
   return (
     <div className="app">
@@ -121,7 +128,7 @@ export default function App() {
               Предыдущий лист
             </button>
             <span className="book-shell__counter">
-              Страница {Math.min(activeSpread + 1, responsePages.length)} из {responsePages.length}
+              Страница {Math.min(activeSpread + 1, spreads.length)} из {spreads.length}
             </span>
             <button
               className="book-shell__nav-btn"
@@ -132,6 +139,7 @@ export default function App() {
           </div>
           <div className="book-shell__container">
             <HTMLFlipBook
+              key={flipKey}
               ref={bookRef}
               className="book"
               style={{}}
@@ -161,47 +169,77 @@ export default function App() {
                 setActiveSpread(Math.floor(pageIndex / 2));
               }}
               >
-              {responsePages.flatMap((entry, index) => {
+              {spreads.flatMap((turn, index) => {
+                const isLast = index === spreads.length - 1;
+                const next = spreads[index + 1];
+                const selectedActionText = next && next.id !== "intro" ? next.action : "";
                 return [
-                  <div key={`left-${index}`} className="book-page book-page--left">
+                  <div key={`left-${turn.id}`} className="book-page book-page--left">
                     <div className="book-page__header">
                       <span className="book-page__ornament">❦ ❦ ❦</span>
                     </div>
+
                     <div className="book-page__body">
                       <h2 className="book-page__running-title">Ваше действие</h2>
-                      <p className="book-page__choice-prompt">{choicePrompt}</p>
+                      <p className="book-page__choice-prompt">{turn.prompt}</p>
+
                       <div className="book-page__choices">
-                        {choices.length > 0 ? (
-                          choices.map((choice) => (
-                            <button
-                              key={choice.id}
-                              className="book-page__choice-btn"
-                              onClick={() => sendRequest(choice.text)}
-                              disabled={loading}
-                            >
-                              {choice.text}
-                            </button>
-                          ))
+                        {turn.choices.length > 0 ? (
+                          turn.choices.map((choice) => {
+                            const isChosen = choice.text === selectedActionText;
+
+                            return (
+                              <button
+                                key={choice.id}
+                                className={`book-page__choice-btn ${
+                                  isChosen ? "is-chosen" : ""
+                                }`}
+                                onClick={() => sendRequest(choice.text)}
+                                disabled={loading || !isLast}
+                              >
+                                {choice.text}
+                              </button>
+                            );
+                          })
+                        ) : turn.id === "intro" && turns.length === 0 ? (
+                          <button
+                            className="book-page__choice-btn book-page__choice-btn--start"
+                            onClick={() => sendRequest("Проснуться")}
+                            disabled={loading}
+                          >
+                            Проснуться
+                          </button>
                         ) : (
                           <div className="book-page__choices-empty">
-                            Варианты появятся после следующего ответа мастера.
+                            Игра началась. Перелистни на следующий лист →
                           </div>
                         )}
                       </div>
-                      <StatusPanel error={error} loading={loading} hasGameState={Boolean(gameState)} />
+
+                      {isLast && (
+                        <StatusPanel
+                          error={error}
+                          loading={loading}
+                          hasGameState={Boolean(gameState)}
+                        />
+                      )}
                     </div>
+
                     <div className="book-page__footer">
                       <span className="book-page__ornament">❦ ❦ ❦</span>
                     </div>
                   </div>,
-                  <div key={`right-${index}`} className="book-page book-page--right">
+
+                  <div key={`right-${turn.id}`} className="book-page book-page--right">
                     <div className="book-page__header">
                       <span className="book-page__ornament">❦ ❦ ❦</span>
                     </div>
+
                     <div className="book-page__body">
                       <h2 className="book-page__running-title">Ответ мастера</h2>
-                      <div className="book-page__response">{entry}</div>
+                      <div className="book-page__response">{turn.narrative}</div>
                     </div>
+
                     <div className="book-page__footer">
                       <span className="book-page__ornament">❦ ❦ ❦</span>
                     </div>
@@ -220,12 +258,21 @@ export default function App() {
                 onClear={() => {
                   setPrompt("");
                 }}
-                onNewGame={() => {
-                  localStorage.removeItem(SESSION_KEY);
-                  setGameState(null);
-                  setPrompt("");
-                  setError("");
-                  sendRequest("Проснуться")
+                onNewGame={async () => {
+                  try {
+                    setLoading(true);
+                    setError("");
+
+                    const data = await createSession();
+
+                    localStorage.setItem(SESSION_KEY, data.state.sessionId);
+                    setGameState(data.state);
+                    setPrompt("");
+                  } catch (e: any) {
+                    setError(e?.message ?? "Ошибка создания новой игры");
+                  } finally {
+                    setLoading(false);
+                  }
                 }}
                 onResume={async () => {
                   setError("");

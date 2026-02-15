@@ -120,6 +120,11 @@
   transition: transform 140ms ease, box-shadow 140ms ease;
 }
 
+.book-page__choice-btn.is-chosen {
+  outline: 2px solid #1fae06;
+  box-shadow: 0 0 10px rgba(157, 108, 12, 0.6);
+}
+
 .book-page__choice-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(56, 33, 15, 0.2);

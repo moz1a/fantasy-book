@@ -3,12 +3,27 @@
   text: string;
 };
 
-export type GameState = {
-  version: 1;
-  sessionId: string;
-  worldSummary: string;
+export type Patch = {
+  hp?: number | undefined;
+  gold?: number | undefined;
+  location?: string | undefined;
+  addItems?: string[] | undefined;
+  removeItems?: string[] | undefined;
+};
+
+export type Turn = {
+  id: string;          // uuid
+  action: string;      // что отправил игрок
+  narrative: string;   // ответ мастера
   prompt: string;
   choices: Choice[];
+  worldSummary: string;
+  patch: Patch;
+};
+
+export type GameState = {
+  sessionId: string;
+  worldSummary: string;
   player: {
     name: string;
     hp: number;
@@ -16,16 +31,13 @@ export type GameState = {
     inventory: string[];
     location: string;
   };
-  log: { role: "user" | "gm"; text: string }[];
+  turns: Turn[];
 };
 
 export function createNewState(sessionId: string): GameState {
   return {
-    version: 1,
     sessionId,
     worldSummary: "Ты просыпаешься в таверне.",
-    prompt: "Что ты делаешь?",
-    choices: [],
     player: {
       name: "Герой",
       hp: 10,
@@ -33,6 +45,6 @@ export function createNewState(sessionId: string): GameState {
       inventory: [],
       location: "Таверна",
     },
-    log: [{ role: "gm", text: "Ты просыпаешься в таверне. Что делаешь?" }],
+    turns: [],
   };
 }
