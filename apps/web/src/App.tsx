@@ -28,6 +28,10 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [activeSpread, setActiveSpread] = useState(0);
+  const [pendingAction, setPendingAction] = useState<{
+    spreadId: string;
+    text: string;
+  } | null>(null);
   const bookRef = useRef<any>(null);
   const SESSION_KEY = "game:sessionId";
 
@@ -98,7 +102,7 @@ export default function App() {
   const spreads = [introSpread, ...turns];
 
   const flipKey = `${gameState?.sessionId ?? "no-session"}:${turns.length}`;
-  useEffect(() => {
+  useEffect(() => { //Перелистывание страницы при ответе сервера
     if (!bookRef.current) return;
 
     const timer = setTimeout(() => {
@@ -107,9 +111,14 @@ export default function App() {
 
       pf.flip((spreads.length - 1) * 2);
     }, 80);
-
+    setPendingAction(null);
     return () => clearTimeout(timer);
   }, [spreads.length]);
+
+  function pickChoice(spreadId: string, text: string) { //подсветка выбора
+    setPendingAction({ spreadId, text });
+    void sendRequest(text);
+  }
 
   return (
     <div className="app">
@@ -186,15 +195,15 @@ export default function App() {
                       <div className="book-page__choices">
                         {turn.choices.length > 0 ? (
                           turn.choices.map((choice) => {
-                            const isChosen = choice.text === selectedActionText;
+                            const isChosen =
+                              choice.text === selectedActionText ||
+                              (pendingAction?.spreadId === turn.id && pendingAction.text === choice.text);
 
                             return (
                               <button
                                 key={choice.id}
-                                className={`book-page__choice-btn ${
-                                  isChosen ? "is-chosen" : ""
-                                }`}
-                                onClick={() => sendRequest(choice.text)}
+                                className={`book-page__choice-btn ${isChosen ? "is-chosen" : ""}`}
+                                onClick={() => pickChoice(turn.id, choice.text)}
                                 disabled={loading || !isLast}
                               >
                                 {choice.text}
@@ -219,8 +228,7 @@ export default function App() {
                       {isLast && (
                         <StatusPanel
                           error={error}
-                          loading={loading}
-                          hasGameState={Boolean(gameState)}
+                          loading={loading && Boolean(pendingAction)}
                         />
                       )}
                     </div>

@@ -1,14 +1,13 @@
 ﻿type StatusPanelProps = {
   error: string;
   loading: boolean;
-  hasGameState: boolean;
 };
 
-export function StatusPanel({ error, loading, hasGameState }: StatusPanelProps) {
+export function StatusPanel({ error, loading }: StatusPanelProps) {
   return (
     <>
       {error && <div className="response error">{error}</div>}
-      {loading && !hasGameState && !error && <div className="response loading">Загрузка...</div>}
+      {loading && !error && <div className="response loading">Загрузка...</div>}
     </>
   );
 }
