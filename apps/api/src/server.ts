@@ -6,8 +6,10 @@ import "dotenv/config";
 
 import { createNewState, type GameState, type Patch } from "./game/types.js";
 import { loadSession, upsertSession } from "./db/sessionsRepo.js";
-import { pplxChat } from "./llm/perplexity.js";
+//import { llmChat } from "./llm/llmConnection.js";
+import { cloudChat } from "./llm/llmCloud.js";
 import { gmReplySchema } from "./game/gmSchema.js";
+import { elizaChat } from "./llm/llmEliza.js";
 
 const app = express();
 
@@ -42,11 +44,6 @@ app.post("/turn", async (req, res) => {
 
     let state: GameState = loadSession(sessionId) ?? createNewState(sessionId);
 
-    // state = {
-    //   ...state,
-    //   log: [...state.log, { role: "user", text: action }],
-    // };
-
     const recent = state.turns
       .slice(-3)
       .map((t) => `USER: ${t.action}\n\nGM: ${t.narrative}`)
@@ -74,20 +71,22 @@ app.post("/turn", async (req, res) => {
       "Сгенерируй следующий ход по указанным правилам.",
     ].join("\n\n");
 
-    const model = process.env.PPLX_MODEL ?? "sonar";
-    const llm = await pplxChat({
-      model,
+    const llm = await elizaChat({
+      // model,
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-      temperature: 0.7,
-      max_tokens: 700,
+      temperature: 0.5,
+      max_tokens: 500,
     });
 
-    console.log("LLM RAW CONTENT:", llm.content);
 
     let parsed: unknown;
+    if (typeof llm.content !== "string") {
+      res.status(502).json({ error: "LLM returned empty or invalid content" });
+      return;
+}
     try {
       parsed = JSON.parse(llm.content);
     } catch {
@@ -95,7 +94,7 @@ app.post("/turn", async (req, res) => {
       return;
     }
 
-    console.log("LLM PARSED CONTENT:", parsed);
+    //console.log("LLM PARSED CONTENT:", parsed);
 
     const validation = gmReplySchema.safeParse(parsed);
     if (!validation.success) {

@@ -1,7 +1,6 @@
-import {schema} from "./schema.js"
+import { schema } from "./schema.js";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
-
 
 export async function pplxChat(params: {
   model: string;
@@ -28,24 +27,25 @@ export async function pplxChat(params: {
       response_format: {
         type: "json_schema",
         json_schema: {
-          // В разных местах документации Perplexity встречается поле name;
-          // если API ругнётся без него — добавь.
           name: "gmreply",
-          schema
+          schema,
           // strict: true  // если поддерживается в твоей версии API/SDK
-        }
-      }
+        },
+      },
     }),
   });
 
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data?.error?.message ?? data?.error ?? `HTTP ${res.status}`);
+    throw new Error(
+      data?.error?.message ?? data?.error ?? `HTTP ${res.status}`,
+    );
   }
 
   const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== "string") throw new Error("No message.content in response");
+  if (typeof content !== "string")
+    throw new Error("No message.content in response");
 
   return { content };
 }
