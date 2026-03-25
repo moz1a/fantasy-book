@@ -5,12 +5,19 @@ import { randomUUID } from "node:crypto";
 import "dotenv/config";
 
 import { createNewState, type GameState, type Patch } from "./game/types.js";
-import { loadSession, upsertSession } from "./db/sessionsRepo.js";
+import {
+  loadSession,
+  upsertSession,
+  upsertTurnIllustration,
+} from "./db/sessionsRepo.js";
+
 import { initDb } from "./db/db.js";
 //import { llmChat } from "./llm/llmConnection.js";
-import { cloudChat } from "./llm/llmCloud.js";
+//import { cloudChat } from "./llm/llmCloud.js";
 import { gmReplySchema } from "./game/gmSchema.js";
 import { elizaChat } from "./llm/llmEliza.js";
+
+import { generateSceneIllustration } from "./llm/yandexArt.js";
 
 const app = express();
 
@@ -153,6 +160,81 @@ app.post("/session", async (_req, res) => {
   await upsertSession(state);
 
   res.json({ state });
+});
+
+function parseDataUrl(dataUrl: string): { mimeType: string; base64: string } {
+  const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
+
+  if (!match || !match[1] || !match[2]) {
+    throw new Error("Invalid data URL returned by illustration generator");
+  }
+
+  const [, mimeType, base64] = match;
+
+  return {
+    mimeType,
+    base64,
+  };
+}
+
+app.post("/illustration", async (req, res) => {
+  try {
+    const sessionId = String(req.body?.sessionId ?? "").trim();
+    const turnId = String(req.body?.turnId ?? "").trim();
+
+    if (!sessionId) {
+      res.status(400).json({ error: "sessionId is required" });
+      return;
+    }
+
+    const state = await loadSession(sessionId);
+
+    if (!state) {
+      res.status(404).json({ error: "session not found", sessionId });
+      return;
+    }
+
+    const turn =
+      state.turns.find((t) => t.id === turnId) ??
+      state.turns[state.turns.length - 1];
+
+    if (!turn) {
+      res.status(404).json({ error: "turn not found" });
+      return;
+    }
+
+    const imageUrl = await generateSceneIllustration({
+      narrative: turn.narrative,
+      worldSummary: state.worldSummary,
+      location: state.player.location,
+    });
+
+    const { mimeType, base64 } = parseDataUrl(imageUrl);
+
+    await upsertTurnIllustration({
+      sessionId,
+      turnId: turn.id,
+      mimeType,
+      imageBase64: base64,
+    });
+
+    const updatedState = await loadSession(sessionId);
+
+    if (!updatedState) {
+      res.status(500).json({ error: "failed to reload session after saving illustration" });
+      return;
+    }
+
+    res.json({
+      state: updatedState,
+      turnId: turn.id,
+      imageUrl,
+    });
+  } catch (e: unknown) {
+    console.error("ILLUSTRATION ERROR:", e);
+    const message = e instanceof Error ? e.message : "server error";
+    res.status(500).json({ error: message });
+  }
 });
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;

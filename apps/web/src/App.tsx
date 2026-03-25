@@ -1,7 +1,14 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import HTMLFlipBook from "react-pageflip";
-import { createSession, getSession, postTurn, type GameState } from "./api";
+import {
+  createSession,
+  getSession,
+  postTurn,
+  generateIllustration,
+  type GameState,
+  type Turn,
+} from "./api";
 import { ActionInput } from "./components/ActionInput";
 import { SessionControls } from "./components/SessionControls";
 import { StatusPanel } from "./components/StatusPanel";
@@ -34,6 +41,7 @@ export default function App() {
   } | null>(null);
   const bookRef = useRef<any>(null);
   const SESSION_KEY = "game:sessionId";
+  const [illustrationLoadingTurnId, setIllustrationLoadingTurnId] = useState<string | null>(null);
 
   useEffect(() => {
     // const el = document.getElementById("theme-link") as HTMLLinkElement | null;
@@ -80,16 +88,31 @@ export default function App() {
     }
   }
 
-  // const gmMessages = gameState?.log.filter((item) => item.role === "gm") ?? [];
-  // const choices = gameState?.choices ?? [];
-  // const choicePrompt = gameState?.prompt ?? "Что ты делаешь?";
-  // const responsePages = gmMessages.length > 0
-  //   ? gmMessages.map( item=> ( item.text ))
-  //   : [ EMPTY_RESPONSE ];
+  async function requestIllustration(turnId: string) {
+    try {
+      setError("");
+      const sessionId = gameState?.sessionId;
+
+      if (!sessionId) {
+        setError("Сначала начни или загрузи игру.");
+        return;
+      }
+
+      setIllustrationLoadingTurnId(turnId);
+
+      const data = await generateIllustration({ sessionId, turnId });
+
+      setGameState(data.state);
+    } catch (e: any) {
+      setError(e?.message ?? "Ошибка генерации иллюстрации");
+    } finally {
+      setIllustrationLoadingTurnId(null);
+    }
+  }
 
   const turns = gameState?.turns ?? [];
 
-  const introSpread = {
+  const introSpread: Turn = {
     id: "intro",
     narrative: EMPTY_RESPONSE,
     prompt: "Что ты делаешь?",
@@ -97,9 +120,11 @@ export default function App() {
     action: "",
     worldSummary: "",
     patch: {},
+    illustrationUrl: undefined,
   };
 
-  const spreads = [introSpread, ...turns];
+
+  const spreads: Turn[] = [introSpread, ...turns];
 
   const flipKey = `${gameState?.sessionId ?? "no-session"}:${turns.length}`;
   useEffect(() => { //Перелистывание страницы при ответе сервера
@@ -246,6 +271,32 @@ export default function App() {
                     <div className="book-page__body">
                       <h2 className="book-page__running-title">Ответ мастера</h2>
                       <div className="book-page__response">{turn.narrative}</div>
+
+                      {turn.id !== "intro" && (
+                        <div className="book-page__illustration-block">
+                          {isLast && (
+                            <button
+                              className="book-page__choice-btn"
+                              onClick={() => void requestIllustration(turn.id)}
+                              disabled={loading || illustrationLoadingTurnId === turn.id}
+                            >
+                              {illustrationLoadingTurnId === turn.id
+                                ? "Генерация..."
+                                : turn.illustrationUrl
+                                ? "Перегенерировать иллюстрацию"
+                                : "Иллюстрация сцены"}
+                            </button>
+                          )}
+
+                          {turn.illustrationUrl && (
+                            <img
+                              className="book-page__illustration"
+                              src={turn.illustrationUrl}
+                              alt="Иллюстрация сцены"
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="book-page__footer">

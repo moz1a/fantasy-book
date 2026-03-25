@@ -26,6 +26,7 @@ export type Turn = {
   choices: Choice[];
   worldSummary: string;
   patch: Patch;
+  illustrationUrl?: string | undefined;
 };
 
 export type GameState = {
@@ -35,7 +36,14 @@ export type GameState = {
   player: PlayerState;
   turns: Turn[];
 };
+
 export type TurnResponse = { state: GameState };
+
+export type IllustrationResponse = {
+  state: GameState;
+  turnId: string;
+  imageUrl: string;
+};
 
 async function readJson(res: Response): Promise<unknown> {
   return await res.json();
@@ -80,4 +88,23 @@ export async function createSession() {
 
   if (!res.ok) throw new Error(errorMessage(data, `HTTP ${res.status}`));
   return data as TurnResponse;
+}
+
+export async function generateIllustration(params: {
+  sessionId: string;
+  turnId: string;
+}) {
+  const res = await fetch("/api/illustration", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  }
+
+  return data as IllustrationResponse;
 }

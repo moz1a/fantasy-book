@@ -155,3 +155,18 @@
     font-size: 0.98rem;
   }
 }
+
+.book-page__illustration-block {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.book-page__illustration {
+  width: 100%;
+  border-radius: 10px;
+  display: block;
+  object-fit: cover;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}

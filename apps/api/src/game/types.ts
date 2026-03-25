@@ -12,13 +12,15 @@ export type Patch = {
 };
 
 export type Turn = {
-  id: string;          // uuid
-  action: string;      // что отправил игрок
-  narrative: string;   // ответ мастера
+  id: string;
+  at: number;
+  action: string;
+  narrative: string;
   prompt: string;
   choices: Choice[];
   worldSummary: string;
   patch: Patch;
+  illustrationUrl?: string | undefined;
 };
 
 export type GameState = {
