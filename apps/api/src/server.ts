@@ -6,6 +6,7 @@ import "dotenv/config";
 
 import { createNewState, type GameState, type Patch } from "./game/types.js";
 import { loadSession, upsertSession } from "./db/sessionsRepo.js";
+import { initDb } from "./db/db.js";
 //import { llmChat } from "./llm/llmConnection.js";
 import { cloudChat } from "./llm/llmCloud.js";
 import { gmReplySchema } from "./game/gmSchema.js";
@@ -20,9 +21,9 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/session/:id", (req, res) => {
+app.get("/session/:id", async (req, res) => {
   const sessionId = String(req.params.id);
-  const state = loadSession(sessionId);
+  const state = await loadSession(sessionId);
 
   if (!state) {
     res.status(404).json({ error: "session not found", sessionId });
@@ -42,7 +43,7 @@ app.post("/turn", async (req, res) => {
       return;
     }
 
-    let state: GameState = loadSession(sessionId) ?? createNewState(sessionId);
+    let state: GameState = (await loadSession(sessionId)) ?? createNewState(sessionId);
 
     const recent = state.turns
       .slice(-3)
@@ -72,7 +73,6 @@ app.post("/turn", async (req, res) => {
     ].join("\n\n");
 
     const llm = await elizaChat({
-      // model,
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
@@ -81,20 +81,19 @@ app.post("/turn", async (req, res) => {
       max_tokens: 500,
     });
 
-
     let parsed: unknown;
+
     if (typeof llm.content !== "string") {
       res.status(502).json({ error: "LLM returned empty or invalid content" });
       return;
-}
+    }
+
     try {
       parsed = JSON.parse(llm.content);
     } catch {
       res.status(502).json({ error: "LLM returned invalid JSON" });
       return;
     }
-
-    //console.log("LLM PARSED CONTENT:", parsed);
 
     const validation = gmReplySchema.safeParse(parsed);
     if (!validation.success) {
@@ -138,7 +137,7 @@ app.post("/turn", async (req, res) => {
       turns: [...state.turns, turn],
     };
 
-    upsertSession(state);
+    await upsertSession(state);
     res.json({ state });
   } catch (e: unknown) {
     console.error("TURN ERROR:", e);
@@ -147,16 +146,26 @@ app.post("/turn", async (req, res) => {
   }
 });
 
-app.post("/session", (_req, res) => {
+app.post("/session", async (_req, res) => {
   const sessionId = randomUUID();
   const state = createNewState(sessionId);
 
-  upsertSession(state);
+  await upsertSession(state);
 
   res.json({ state });
-}); 
+});
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-app.listen(PORT, () => {
-  console.log(`API listening on http://localhost:${PORT}`);
+
+async function bootstrap() {
+  await initDb();
+
+  app.listen(PORT, () => {
+    console.log(`API listening on http://localhost:${PORT}`);
+  });
+}
+
+bootstrap().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });
