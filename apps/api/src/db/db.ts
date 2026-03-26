@@ -41,4 +41,14 @@ export async function initDb() {
       PRIMARY KEY (session_id, turn_id)
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS character_portraits (
+      session_id TEXT PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+      mime_type TEXT NOT NULL,
+      image_base64 TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 }

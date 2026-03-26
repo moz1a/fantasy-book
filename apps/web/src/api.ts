@@ -1,21 +1,44 @@
 ﻿type ApiError = { error?: string };
 
+export type PlayerStats = {
+  strength: number;
+  agility: number;
+  intelligence: number;
+};
+
+export type StatsPatch = {
+  strength?: number | undefined;
+  agility?: number | undefined;
+  intelligence?: number | undefined;
+};
+
 export type PlayerState = {
   name: string;
   hp: number;
+  maxHp: number;
   gold: number;
   inventory: string[];
   location: string;
+  stats: PlayerStats;
+  effects: string[];
+  avatarUrl?: string | undefined;
 };
 
-export type Choice = { id: string; text: string };
+export type Choice = {
+  id: string;
+  text: string;
+};
 
 export type Patch = {
   hp?: number | undefined;
+  maxHp?: number | undefined;
   gold?: number | undefined;
   location?: string | undefined;
+  stats?: StatsPatch | undefined;
   addItems?: string[] | undefined;
   removeItems?: string[] | undefined;
+  addEffects?: string[] | undefined;
+  removeEffects?: string[] | undefined;
 };
 
 export type Turn = {
@@ -30,7 +53,6 @@ export type Turn = {
 };
 
 export type GameState = {
-  version: number;
   sessionId: string;
   worldSummary: string;
   player: PlayerState;
@@ -42,6 +64,11 @@ export type TurnResponse = { state: GameState };
 export type IllustrationResponse = {
   state: GameState;
   turnId: string;
+  imageUrl: string;
+};
+
+export type CharacterAvatarResponse = {
+  state: GameState;
   imageUrl: string;
 };
 
@@ -107,4 +134,22 @@ export async function generateIllustration(params: {
   }
 
   return data as IllustrationResponse;
+}
+
+export async function generateCharacterAvatar(params: {
+  sessionId: string;
+}) {
+  const res = await fetch("/api/character/avatar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  }
+
+  return data as CharacterAvatarResponse;
 }

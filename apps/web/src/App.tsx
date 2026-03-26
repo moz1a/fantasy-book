@@ -6,6 +6,7 @@ import {
   getSession,
   postTurn,
   generateIllustration,
+  generateCharacterAvatar,
   type GameState,
   type Turn,
 } from "./api";
@@ -19,6 +20,8 @@ import "./styles/book.css";
 import "./styles/session-controls.css";
 import "./styles/status-panel.css";
 import "./styles/theme-switcher.css";
+import "./styles/character-card.css";
+import { CharacterCard } from "./components/characterCard";
 
 // const THEMES = [
 //   { id: "gothic", label: "Gothic", href: "/themes/gothic-library.css" },
@@ -43,6 +46,7 @@ export default function App() {
   const shouldAnimateToLastRef = useRef(false);
   const SESSION_KEY = "game:sessionId";
   const [illustrationLoadingTurnId, setIllustrationLoadingTurnId] = useState<string | null>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
 
   useEffect(() => {
     // const el = document.getElementById("theme-link") as HTMLLinkElement | null;
@@ -111,6 +115,27 @@ export default function App() {
       setError(e?.message ?? "Ошибка генерации иллюстрации");
     } finally {
       setIllustrationLoadingTurnId(null);
+    }
+  }
+
+  async function requestCharacterAvatar() {
+    try {
+      setError("");
+      const sessionId = gameState?.sessionId;
+
+      if (!sessionId) {
+        setError("Сначала начни или загрузи игру.");
+        return;
+      }
+
+      setAvatarLoading(true);
+
+      const data = await generateCharacterAvatar({ sessionId });
+      setGameState(data.state);
+    } catch (e: any) {
+      setError(e?.message ?? "Ошибка генерации портрета");
+    } finally {
+      setAvatarLoading(false);
     }
   }
 
@@ -322,6 +347,14 @@ export default function App() {
               })}
             </HTMLFlipBook>
             <div className="book-shell__container-column">
+              <CharacterCard
+                player={gameState?.player ?? null}
+                loading={avatarLoading}
+                onGenerateAvatar={() => {
+                  void requestCharacterAvatar();
+                }}
+              />
+
               <ActionInput
               prompt={prompt}
               loading={loading}

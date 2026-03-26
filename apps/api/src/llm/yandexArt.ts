@@ -30,7 +30,7 @@ type OperationPollResponse = {
   done: boolean;
   error?: OperationError;
   response?: {
-    image?: string; // base64
+    image?: string;
   };
 };
 
@@ -72,6 +72,23 @@ function buildScenePrompt(params: {
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+function buildCharacterPortraitPrompt(params: {
+  description: string;
+}) {
+  return [
+    "Портрет персонажа для интерактивной фэнтези-книги.",
+    "Стиль: детализированный фэнтези-портрет, акцент на лице, верхней части тела и одежде персонажа.",
+    "Один персонаж в кадре.",
+    "Крупный план или поясной портрет.",
+    "Фон нейтральный, размытый или минималистичный.",
+    "Не рисуй пейзаж, архитектуру, комнату, таверну, лес, улицу или детализированную локацию.",
+    "Не делай сцену действия.",
+    "Не добавляй других персонажей.",
+    "Без текста, без подписей, без интерфейса.",
+    `Описание персонажа: ${params.description}`,
+  ].join(" ");
 }
 
 async function startImageGeneration(params: {
@@ -173,26 +190,20 @@ async function pollOperation(params: {
   throw new Error("YandexART generation timeout");
 }
 
-export async function generateSceneIllustration(params: {
-  narrative: string;
-  worldSummary?: string;
-  location?: string;
+async function generateImage(params: {
+  prompt: string;
+  widthRatio: number;
+  heightRatio: number;
 }) {
   const iamToken = getRequiredEnv("YANDEX_IAM_TOKEN");
   const folderId = getRequiredEnv("YANDEX_FOLDER_ID");
 
-  const prompt = buildScenePrompt({
-    narrative: params.narrative,
-    worldSummary: params.worldSummary,
-    location: params.location,
-  });
-
   const operationId = await startImageGeneration({
     iamToken,
     folderId,
-    prompt,
-    widthRatio: 16,
-    heightRatio: 9,
+    prompt: params.prompt,
+    widthRatio: params.widthRatio,
+    heightRatio: params.heightRatio,
   });
 
   const base64 = await pollOperation({
@@ -203,4 +214,36 @@ export async function generateSceneIllustration(params: {
   });
 
   return `data:image/jpeg;base64,${base64}`;
+}
+
+export async function generateSceneIllustration(params: {
+  narrative: string;
+  worldSummary?: string;
+  location?: string;
+}) {
+  const prompt = buildScenePrompt({
+    narrative: params.narrative,
+    worldSummary: params.worldSummary,
+    location: params.location,
+  });
+
+  return await generateImage({
+    prompt,
+    widthRatio: 16,
+    heightRatio: 9,
+  });
+}
+
+export async function generateCharacterPortrait(params: {
+  description: string;
+}) {
+  const prompt = buildCharacterPortraitPrompt({
+    description: params.description,
+  });
+
+  return await generateImage({
+    prompt,
+    widthRatio: 1,
+    heightRatio: 1,
+  });
 }
