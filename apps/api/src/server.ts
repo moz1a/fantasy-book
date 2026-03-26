@@ -18,6 +18,7 @@ import { gmReplySchema } from "./game/gmSchema.js";
 import { elizaChat } from "./llm/llmEliza.js";
 
 import { generateSceneIllustration } from "./llm/yandexArt.js";
+import { parseAndNormalizeModelJson } from "./game/normalization.js";
 
 const app = express();
 
@@ -66,7 +67,9 @@ app.post("/turn", async (req, res) => {
       "prompt всегда: 'Что ты делаешь?'.",
       "narrative — 2-4 коротких абзаца.",
       "Каждый choice: {id, text}. id: ^[a-z0-9_-]+$.",
-      "patch меняет только то, что реально изменилось в этом ходе.",
+      "patch может содержать только поля: hp, gold, location, addItems, removeItems.",
+      "Не добавляй в patch других полей.",
+      "Если изменений нет, верни patch как {}.",
     ].join("\n");
 
     const user = [
@@ -88,25 +91,36 @@ app.post("/turn", async (req, res) => {
       max_tokens: 500,
     });
 
-    let parsed: unknown;
-
-    if (typeof llm.content !== "string") {
+    if (typeof llm.content !== "string" || !llm.content.trim()) {
       res.status(502).json({ error: "LLM returned empty or invalid content" });
       return;
     }
 
+    let normalizedText: string;
+    let normalizedObject: unknown;
+
     try {
-      parsed = JSON.parse(llm.content);
-    } catch {
-      res.status(502).json({ error: "LLM returned invalid JSON" });
+      const result = parseAndNormalizeModelJson(llm.content);
+      normalizedText = result.normalizedText;
+      normalizedObject = result.normalizedObject;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to parse model JSON";
+      res.status(502).json({
+        error: message,
+        rawContent: llm.content,
+      });
       return;
     }
 
-    const validation = gmReplySchema.safeParse(parsed);
+    const validation = gmReplySchema.safeParse(normalizedObject);
+
     if (!validation.success) {
       res.status(502).json({
         error: "LLM response does not match gmReplySchema",
         details: validation.error.issues,
+        rawContent: llm.content,
+        normalizedText,
+        normalizedObject,
       });
       return;
     }
@@ -251,3 +265,4 @@ bootstrap().catch((err) => {
   console.error("Failed to start server:", err);
   process.exit(1);
 });
+

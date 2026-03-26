@@ -58,9 +58,9 @@ export async function elizaChat(params: {
     }));
 
   const payload = {
-    model: "GPT-OSS-120B",
+    model: "Alice AI 235B",
     messages: safeMessages,
-    max_tokens: params.max_tokens ?? 1200,
+    //max_tokens: params.max_tokens ?? 1200,
     temperature: params.temperature ?? 0.4,
     reasoning_effort: "low",
     response_format: {
@@ -73,7 +73,7 @@ export async function elizaChat(params: {
   };
   console.log("ВООООООООООООТ ПЕЙЛОД", payload)
   const response = await fetch(
-    "https://api.eliza.yandex.net/internal/gpt-oss-120b/v1/chat/completions",
+    "https://api.eliza.yandex.net/internal/alice-ai-llm-235b-latest/generative/v1/chat/completions",
     {
       method: "POST",
       headers: {
@@ -124,17 +124,11 @@ export async function elizaChat(params: {
       `Model returned empty content. finish_reason=${finishReason ?? "unknown"}`
     );
   }
-
-  let parsedContent: unknown;
-  try {
-    parsedContent = JSON.parse(content);
-  } catch {
-    throw new Error(`Model content is not valid JSON: ${content}`);
-  }
+  console.log(content)
 
   return {
     content,
-    parsed: parsedContent,
+    finishReason,
     raw: envelope,
   };
 }
