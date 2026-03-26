@@ -40,6 +40,7 @@ export default function App() {
     text: string;
   } | null>(null);
   const bookRef = useRef<any>(null);
+  const shouldAnimateToLastRef = useRef(false);
   const SESSION_KEY = "game:sessionId";
   const [illustrationLoadingTurnId, setIllustrationLoadingTurnId] = useState<string | null>(null);
 
@@ -71,6 +72,8 @@ export default function App() {
     }
 
     setLoading(true);
+    shouldAnimateToLastRef.current = true;
+
     try {
       const savedSessionId = localStorage.getItem(SESSION_KEY);
       const data = await postTurn({
@@ -82,6 +85,7 @@ export default function App() {
       setGameState(data.state);
       setPrompt("");
     } catch (e: any) {
+      shouldAnimateToLastRef.current = false;
       setError(e?.message ?? "Ошибка запроса");
     } finally {
       setLoading(false);
@@ -126,19 +130,30 @@ export default function App() {
 
   const spreads: Turn[] = [introSpread, ...turns];
 
-  const flipKey = `${gameState?.sessionId ?? "no-session"}:${turns.length}`;
-  useEffect(() => { //Перелистывание страницы при ответе сервера
-    if (!bookRef.current) return;
+  const flipKey = gameState?.sessionId ?? "no-session";
 
+  useEffect(() => {
     const timer = setTimeout(() => {
       const pf = bookRef.current?.pageFlip?.();
       if (!pf) return;
 
-      pf.flip((spreads.length - 1) * 2);
+      const lastSpreadIndex = spreads.length - 1;
+      const lastPageIndex = lastSpreadIndex * 2;
+      const currentPageIndex = pf.getCurrentPageIndex();
+
+      if (shouldAnimateToLastRef.current && currentPageIndex < lastPageIndex) {
+        pf.flip(lastPageIndex, "bottom"); // анимированное перелистывание
+        shouldAnimateToLastRef.current = false;
+      } else if (currentPageIndex !== lastPageIndex) {
+        pf.turnToPage(lastPageIndex); // мгновенно, например при Resume
+        setActiveSpread(lastSpreadIndex);
+      }
+
+      setPendingAction(null);
     }, 80);
-    setPendingAction(null);
+
     return () => clearTimeout(timer);
-  }, [spreads.length]);
+  }, [spreads.length, gameState?.sessionId]);
 
   function pickChoice(spreadId: string, text: string) { //подсветка выбора
     setPendingAction({ spreadId, text });
@@ -323,10 +338,12 @@ export default function App() {
                     setError("");
 
                     const data = await createSession();
-
+                    shouldAnimateToLastRef.current = false;
                     localStorage.setItem(SESSION_KEY, data.state.sessionId);
                     setGameState(data.state);
                     setPrompt("");
+                    setActiveSpread(0);
+                    setPendingAction(null);
                   } catch (e: any) {
                     setError(e?.message ?? "Ошибка создания новой игры");
                   } finally {

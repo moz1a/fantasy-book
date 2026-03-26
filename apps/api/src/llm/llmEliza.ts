@@ -58,7 +58,7 @@ export async function elizaChat(params: {
     }));
 
   const payload = {
-    model: "Alice AI 235B",
+    model: "DeepSeek V3.2",
     messages: safeMessages,
     //max_tokens: params.max_tokens ?? 1200,
     temperature: params.temperature ?? 0.4,
@@ -73,7 +73,7 @@ export async function elizaChat(params: {
   };
   console.log("ВООООООООООООТ ПЕЙЛОД", payload)
   const response = await fetch(
-    "https://api.eliza.yandex.net/internal/alice-ai-llm-235b-latest/generative/v1/chat/completions",
+    "https://api.eliza.yandex.net/internal/deepseek-v3-2/v1/chat/completions",
     {
       method: "POST",
       headers: {
