@@ -8,15 +8,15 @@ export const schema = {
     "worldSummary",
     "patch",
     "combatPatch",
-    "directorPatch"
+    "directorPatch",
   ],
   properties: {
-    narrative: { type: "string", minLength: 1, maxLength: 900 },
+    narrative: { type: "string", minLength: 1, maxLength: 2200 },
 
     prompt: {
       type: "string",
       minLength: 1,
-      maxLength: 180
+      maxLength: 180,
     },
 
     choices: {
@@ -31,18 +31,18 @@ export const schema = {
           id: {
             type: "string",
             minLength: 1,
-            maxLength: 24
+            maxLength: 24,
           },
           text: {
             type: "string",
             minLength: 1,
-            maxLength: 160
-          }
-        }
-      }
+            maxLength: 1200,
+          },
+        },
+      },
     },
 
-    worldSummary: { type: "string", minLength: 1, maxLength: 650 },
+    worldSummary: { type: "string", minLength: 1, maxLength: 1250 },
 
     patch: {
       type: "object",
@@ -59,31 +59,31 @@ export const schema = {
           properties: {
             strength: { type: "integer", minimum: 0, maximum: 99 },
             agility: { type: "integer", minimum: 0, maximum: 99 },
-            intelligence: { type: "integer", minimum: 0, maximum: 99 }
-          }
+            intelligence: { type: "integer", minimum: 0, maximum: 99 },
+          },
         },
 
         addItems: {
           type: "array",
           items: { type: "string", minLength: 1 },
-          maxItems: 20
+          maxItems: 20,
         },
         removeItems: {
           type: "array",
           items: { type: "string", minLength: 1 },
-          maxItems: 20
+          maxItems: 20,
         },
         addEffects: {
           type: "array",
           items: { type: "string", minLength: 1 },
-          maxItems: 10
+          maxItems: 10,
         },
         removeEffects: {
           type: "array",
           items: { type: "string", minLength: 1 },
-          maxItems: 10
-        }
-      }
+          maxItems: 10,
+        },
+      },
     },
 
     combatPatch: {
@@ -97,13 +97,13 @@ export const schema = {
         enemyIntent: { type: "string", minLength: 1, maxLength: 160 },
         distance: {
           type: "string",
-          enum: ["far", "near", "melee"]
+          enum: ["far", "near", "melee"],
         },
         phase: {
           type: "string",
-          enum: ["opening", "exchange", "finisher"]
-        }
-      }
+          enum: ["opening", "exchange", "finisher"],
+        },
+      },
     },
 
     directorPatch: {
@@ -112,7 +112,7 @@ export const schema = {
       properties: {
         sceneKind: {
           type: "string",
-          enum: ["exploration", "social", "combat", "recovery", "mystery"]
+          enum: ["exploration", "social", "combat", "recovery", "mystery"],
         },
         sceneGoal: { type: "string", minLength: 1, maxLength: 160 },
         tension: { type: "integer", minimum: 0, maximum: 100 },
@@ -122,14 +122,14 @@ export const schema = {
         addThreads: {
           type: "array",
           items: { type: "string", minLength: 1 },
-          maxItems: 10
+          maxItems: 10,
         },
         removeThreads: {
           type: "array",
           items: { type: "string", minLength: 1 },
-          maxItems: 10
-        }
-      }
-    }
-  }
+          maxItems: 10,
+        },
+      },
+    },
+  },
 };

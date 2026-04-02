@@ -32,14 +32,14 @@ function extractFirstJsonObject(text: string): string {
         continue;
       }
 
-      if (ch === "\"") {
+      if (ch === '"') {
         inString = false;
       }
 
       continue;
     }
 
-    if (ch === "\"") {
+    if (ch === '"') {
       inString = true;
       continue;
     }
@@ -62,7 +62,9 @@ function extractFirstJsonObject(text: string): string {
     }
   }
 
-  throw new Error("Could not extract a complete JSON object from model response");
+  throw new Error(
+    "Could not extract a complete JSON object from model response",
+  );
 }
 
 function sanitizeString(value: unknown, maxLen: number): string | undefined {
@@ -77,7 +79,7 @@ function sanitizeString(value: unknown, maxLen: number): string | undefined {
 function sanitizeInteger(
   value: unknown,
   min?: number,
-  max?: number
+  max?: number,
 ): number | undefined {
   if (typeof value !== "number" || !Number.isInteger(value)) {
     return undefined;
@@ -92,7 +94,7 @@ function sanitizeInteger(
 function sanitizeStringArray(
   value: unknown,
   maxItems = 20,
-  maxItemLen = 120
+  maxItemLen = 120,
 ): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
 
@@ -220,7 +222,11 @@ function sanitizeCombatPatch(input: unknown): CombatPatch {
     patch.enemyIntent = enemyIntent;
   }
 
-  if (src.distance === "far" || src.distance === "near" || src.distance === "melee") {
+  if (
+    src.distance === "far" ||
+    src.distance === "near" ||
+    src.distance === "melee"
+  ) {
     patch.distance = src.distance;
   }
 
@@ -297,10 +303,13 @@ function normalizeChoices(value: unknown): unknown {
   }
 
   return value
-    .filter((item): item is Record<string, unknown> => !!item && typeof item === "object" && !Array.isArray(item))
+    .filter(
+      (item): item is Record<string, unknown> =>
+        !!item && typeof item === "object" && !Array.isArray(item),
+    )
     .map((item) => {
       const id = sanitizeString(item.id, 24);
-      const text = sanitizeString(item.text, 160);
+      const text = sanitizeString(item.text, 1200);
 
       return {
         id,
@@ -318,10 +327,10 @@ function normalizeModelReply(input: unknown): unknown {
   const src = input as Record<string, unknown>;
 
   return {
-    narrative: sanitizeString(src.narrative, 900) ?? src.narrative,
+    narrative: sanitizeString(src.narrative, 2200) ?? src.narrative,
     prompt: sanitizeString(src.prompt, 180) ?? src.prompt,
     choices: normalizeChoices(src.choices),
-    worldSummary: sanitizeString(src.worldSummary, 650) ?? src.worldSummary,
+    worldSummary: sanitizeString(src.worldSummary, 1250) ?? src.worldSummary,
     patch: sanitizePatch(src.patch),
     combatPatch: sanitizeCombatPatch(src.combatPatch),
     directorPatch: sanitizeDirectorPatch(src.directorPatch),
