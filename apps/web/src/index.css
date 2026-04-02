@@ -8,21 +8,27 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 18% 12%, rgba(255, 236, 197, 0.25), transparent 40%),
     radial-gradient(circle at 82% 22%, rgba(158, 111, 63, 0.18), transparent 46%),
     linear-gradient(160deg, #22140a 0%, #3f2614 38%, #5a3a21 100%);
   background-attachment: fixed;
   color: #2d1b0f;
-  height: 100vh;
-  /* overflow: hidden; */
+  overflow: hidden;
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 button,
@@ -33,4 +39,14 @@ textarea {
 .red {
   outline: 3px solid red;
   background-color: aqua;
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow: auto;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
 }

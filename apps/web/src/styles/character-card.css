@@ -1,10 +1,16 @@
 .character-card {
   width: 100%;
   box-sizing: border-box;
-  padding: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   color: #2f1a0b;
   border: 1px solid #a47a4a;
-  border-radius: 10px;
+  border-radius: 12px;
   background:
     radial-gradient(circle at top left, rgba(158, 111, 57, 0.12), transparent 36%),
     linear-gradient(180deg, rgba(250, 238, 212, 0.98), rgba(235, 215, 175, 0.96));
@@ -14,7 +20,7 @@
 }
 
 .character-card--empty {
-  min-height: 180px;
+  min-height: 160px;
 }
 
 .character-card__header {
@@ -22,7 +28,6 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
 }
 
 .character-card__title {
@@ -35,7 +40,7 @@
 
 .character-card__name {
   margin-top: 4px;
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #4a2810;
 }
@@ -45,7 +50,7 @@
   background: linear-gradient(180deg, #f4ddb2, #d8b479);
   color: #2f1b0a;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 7px 11px;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
 }
@@ -63,12 +68,11 @@
 
 .character-card__avatar-wrap {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: clamp(108px, 17vh, 160px);
   border-radius: 10px;
   overflow: hidden;
   background: rgba(80, 60, 20, 0.08);
   border: 1px solid rgba(139, 95, 54, 0.35);
-  margin-bottom: 16px;
 }
 
 .character-card__avatar {
@@ -91,12 +95,11 @@
 .character-card__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
 }
 
 .character-card__stat {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid rgba(139, 95, 54, 0.25);
   background: rgba(120, 90, 40, 0.08);
@@ -111,7 +114,7 @@
 }
 
 .character-card__stat strong {
-  font-size: 16px;
+  font-size: 15px;
   color: #2d1a0b;
 }
 
@@ -119,19 +122,26 @@
   grid-column: 1 / -1;
 }
 
-.character-card__section + .character-card__section {
-  margin-top: 14px;
+.character-card__section {
+  padding-top: 8px;
+  border-top: 1px solid rgba(139, 95, 54, 0.16);
+}
+
+.character-card__grid + .character-card__section {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .character-card__section-title {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   font-weight: 700;
   color: #6d3e1d;
 }
 
 .character-card__list {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 16px;
+  font-size: 0.94rem;
 }
 
 .character-card__list li + li {

@@ -1,19 +1,30 @@
 ﻿.session-controls {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(164, 122, 74, 0.7);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(252, 242, 221, 0.94), rgba(235, 215, 175, 0.9));
 }
 
 .session-controls__button {
+  width: 100%;
   border: 1px solid #8b5e36;
   background: linear-gradient(180deg, #f4ddb2, #d8b479);
   color: #2f1b0a;
   border-radius: 8px;
-  padding: 7px 12px;
+  padding: 7px 10px;
   cursor: pointer;
 }
 
 .session-controls__button:hover {
   background: linear-gradient(180deg, #f8e7c5, #dfbe86);
+}
+
+@media (max-width: 1100px) {
+  .session-controls {
+    grid-template-columns: 1fr;
+  }
 }
