@@ -21,7 +21,7 @@ import "./styles/session-controls.css";
 import "./styles/status-panel.css";
 import "./styles/theme-switcher.css";
 import "./styles/character-card.css";
-import { CharacterCard } from "./components/characterCard";
+import { CharacterCard } from "./components/CharacterCard";
 
 // const THEMES = [
 //   { id: "gothic", label: "Gothic", href: "/themes/gothic-library.css" },
