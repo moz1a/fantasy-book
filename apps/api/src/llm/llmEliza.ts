@@ -44,7 +44,7 @@ export async function elizaChat(params: {
   max_tokens?: number;
   temperature?: number;
 }) {
-  const oauth = process.env.API_KEY_OAUTH;
+  const oauth = process.env.API_KEY_OAUTH_ELIZA;
 
   if (!oauth) {
     throw new Error("API_KEY_OAUTH is not set");
