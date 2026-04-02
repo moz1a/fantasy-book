@@ -3,7 +3,7 @@ import { schema } from "./schema.js";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
-const key = process.env.API_KEY;
+const key = process.env.API_KEY_YANDEX;
 
 const openai = new OpenAI({
   apiKey: key,
