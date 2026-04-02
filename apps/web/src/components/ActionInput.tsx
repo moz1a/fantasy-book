@@ -1,18 +1,23 @@
-﻿type ActionInputProps = {
-  prompt: string;
+﻿import { useState } from "react";
+
+type ActionInputProps = {
   loading: boolean;
-  onPromptChange: (value: string) => void;
-  onClear: () => void;
-  onSend: (actionOverride?: string) => void;
+  onSend: (actionOverride?: string) => Promise<boolean> | boolean;
 };
 
-export function ActionInput({
-  prompt,
-  loading,
-  onPromptChange,
-  onClear,
-  onSend,
-}: ActionInputProps) {
+export function ActionInput({ loading, onSend }: ActionInputProps) {
+  const [prompt, setPrompt] = useState("");
+
+  async function handleSend() {
+    const text = prompt.trim();
+    if (!text || loading) return;
+
+    const ok = await onSend(text);
+    if (ok) {
+      setPrompt("");
+    }
+  }
+
   return (
     <div className="action-input">
       <h3>Альтернативное действие</h3>
@@ -20,18 +25,22 @@ export function ActionInput({
         className="action-input__textarea"
         rows={4}
         value={prompt}
-        onChange={(e) => onPromptChange(e.target.value)}
+        onChange={(e) => setPrompt(e.target.value)}
         placeholder="Опиши действие персонажа..."
       />
       <div className="action-input__actions">
         <button
           className="action-input__button action-input__button--secondary"
-          onClick={onClear}
+          onClick={() => setPrompt("")}
           disabled={loading || !prompt.trim()}
         >
           Очистить
         </button>
-        <button className="action-input__button" onClick={() => onSend()} disabled={loading}>
+        <button
+          className="action-input__button"
+          onClick={() => void handleSend()}
+          disabled={loading}
+        >
           {loading ? "Отправка..." : "Отправить"}
         </button>
       </div>

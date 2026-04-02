@@ -101,11 +101,31 @@
   padding: 2px 0 0;
 }
 
+.book-shell__book-stage {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.book-shell__overlay-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.book-shell__action-overlay {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  pointer-events: auto;
+}
+
 .book-shell__container-column {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   min-height: 0;
   overflow: hidden;
 }
@@ -163,6 +183,19 @@
 
   .book-shell__book-column {
     overflow: visible;
+  }
+
+  .book-shell__book-stage {
+    width: 100% !important;
+  }
+
+  .book-shell__overlay-layer {
+    inset: auto 10px 10px;
+  }
+
+  .book-shell__action-overlay {
+    position: static;
+    width: 100% !important;
   }
 
   .book-shell__container-column {

@@ -1,5 +1,5 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import HTMLFlipBook from "react-pageflip";
 import {
   createSession,
@@ -31,6 +31,7 @@ import { CharacterCard } from "./components/CharacterCard";
 
 const EMPTY_RESPONSE = "Нажми «Новая игра» и сделай первый ход. Ответ мастера появится на правой странице.";
 const PAGE_RATIO = 520 / 680;
+const ACTION_OVERLAY_HEIGHT = 196;
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -38,11 +39,11 @@ function clamp(value: number, min: number, max: number) {
 
 export default function App() {
   // const [themeHref, setThemeHref] = useState("/themes/gothic-library.css");
-  const [prompt, setPrompt] = useState("");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [activeSpread, setActiveSpread] = useState(0);
+  const [isBookFlipping, setIsBookFlipping] = useState(false);
   const [pendingAction, setPendingAction] = useState<{
     spreadId: string;
     text: string;
@@ -91,11 +92,11 @@ export default function App() {
 
   async function sendRequest(actionOverride?: string) {
     setError("");
-    const actionToSend = (actionOverride ?? prompt).trim();
+    const actionToSend = (actionOverride ?? "").trim();
 
     if (!actionToSend) {
       setError("Введите действие/запрос.");
-      return;
+      return false;
     }
 
     setLoading(true);
@@ -110,10 +111,11 @@ export default function App() {
 
       localStorage.setItem(SESSION_KEY, data.state.sessionId);
       setGameState(data.state);
-      setPrompt("");
+      return true;
     } catch (e: any) {
       shouldAnimateToLastRef.current = false;
       setError(e?.message ?? "Ошибка запроса");
+      return false;
     } finally {
       setLoading(false);
     }
@@ -192,6 +194,10 @@ export default function App() {
     540
   );
   const bookPageHeight = Math.round(bookPageWidth / PAGE_RATIO);
+  const singlePageMode = viewportSize.width < 900;
+  const visibleBookWidth = singlePageMode ? bookPageWidth : bookPageWidth * 2;
+  const actionOverlayVisible = activeSpread === spreads.length - 1 && !isBookFlipping;
+  const actionOverlayWidth = Math.max(236, bookPageWidth - 34);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -219,6 +225,23 @@ export default function App() {
   function pickChoice(spreadId: string, text: string) { //подсветка выбора
     setPendingAction({ spreadId, text });
     void sendRequest(text);
+  }
+
+  function stopOverlayPropagation(e: SyntheticEvent) {
+    e.stopPropagation();
+  }
+
+  function handleBookStateChange(e: any) {
+    const state = String(e?.data ?? "");
+
+    if (state === "flipping" || state === "fold_corner" || state === "user_fold") {
+      setIsBookFlipping(true);
+      return;
+    }
+
+    if (state === "read") {
+      setIsBookFlipping(false);
+    }
   }
 
   return (
@@ -250,6 +273,13 @@ export default function App() {
               </div>
 
               <div className="book-shell__book-area">
+                <div
+                  className="book-shell__book-stage"
+                  style={{
+                    width: visibleBookWidth,
+                    height: bookPageHeight,
+                  }}
+                >
                 <HTMLFlipBook
                   key={flipKey}
                   ref={bookRef}
@@ -280,6 +310,7 @@ export default function App() {
                     const pageIndex = Number(e.data);
                     setActiveSpread(Math.floor(pageIndex / 2));
                   }}
+                  onChangeState={handleBookStateChange}
                 >
                   {spreads.flatMap((turn, index) => {
                     const isLast = index === spreads.length - 1;
@@ -334,11 +365,18 @@ export default function App() {
                               loading={loading && Boolean(pendingAction)}
                             />
                           )}
+
+                          {isLast && actionOverlayVisible && (
+                            <div
+                              className="book-page__action-spacer"
+                              style={{ height: ACTION_OVERLAY_HEIGHT }}
+                            />
+                          )}
                         </div>
 
-                        <div className="book-page__footer">
+                        {/* <div className="book-page__footer">
                           <span className="book-page__ornament">❦ ❦ ❦</span>
-                        </div>
+                        </div> */}
                       </div>,
 
                       <div key={`right-${turn.id}`} className="book-page book-page--right">
@@ -384,6 +422,26 @@ export default function App() {
                     ];
                   })}
                 </HTMLFlipBook>
+                  {actionOverlayVisible && (
+                    <div className="book-shell__overlay-layer">
+                      <div
+                        className="book-shell__action-overlay"
+                        style={{
+                          width: actionOverlayWidth,
+                        }}
+                        onPointerDown={stopOverlayPropagation}
+                        onMouseDown={stopOverlayPropagation}
+                        onClick={stopOverlayPropagation}
+                      >
+                        <ActionInput
+                          loading={loading}
+                          key={`${gameState?.sessionId ?? "no-session"}-${gameState?.turns.length ?? 0}`}
+                          onSend={sendRequest}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -399,7 +457,6 @@ export default function App() {
                       shouldAnimateToLastRef.current = false;
                       localStorage.setItem(SESSION_KEY, data.state.sessionId);
                       setGameState(data.state);
-                      setPrompt("");
                       setActiveSpread(0);
                       setPendingAction(null);
                     } catch (e: any) {
@@ -435,16 +492,6 @@ export default function App() {
 
               <CharacterCard
                 player={gameState?.player ?? null}
-              />
-
-              <ActionInput
-                prompt={prompt}
-                loading={loading}
-                onPromptChange={setPrompt}
-                onClear={() => {
-                  setPrompt("");
-                }}
-                onSend={sendRequest}
               />
             </div>
             
