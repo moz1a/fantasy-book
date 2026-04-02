@@ -72,6 +72,8 @@
   position: relative;
   z-index: 1;
   flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 12px 14px;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -80,7 +82,7 @@
 .book-page__running-title {
   margin: 0 0 6px;
   color: #603512;
-  font-size: 1.08rem;
+  font-size: 1.14rem;
   border-bottom: 1px dashed rgba(95, 56, 26, 0.35);
   padding-bottom: 5px;
 }
@@ -94,21 +96,22 @@
 
 .book-page__response {
   white-space: pre-wrap;
-  line-height: 1.5;
-  font-size: 0.97rem;
+  line-height: 1.58;
+  font-size: 1rem;
   text-align: justify;
 }
 
 .book-page__choice-prompt {
   margin: 0 0 8px;
   color: #643816;
-  font-size: 0.94rem;
+  font-size: 0.97rem;
 }
 
 .book-page__choices {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-top: auto;
 }
 
 .book-page__choice-btn {
@@ -121,7 +124,7 @@
   color: #2d1a0b;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease;
-  font-size: 0.94rem;
+  font-size: 0.96rem;
 }
 
 .book-page__choice-btn.is-chosen {
@@ -162,7 +165,8 @@
 }
 
 .book-page__illustration-block {
-  margin-top: 12px;
+  margin-top: auto;
+  padding-top: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -170,7 +174,7 @@
 
 .book-page__illustration {
   width: 100%;
-  max-height: min(30vh, 220px);
+  max-height: min(32vh, 240px);
   border-radius: 10px;
   display: block;
   object-fit: cover;

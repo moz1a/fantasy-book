@@ -2,15 +2,9 @@ import type { PlayerState } from "../api";
 
 type CharacterCardProps = {
   player: PlayerState | null;
-  loading: boolean;
-  onGenerateAvatar: () => void;
 };
 
-export function CharacterCard({
-  player,
-  loading,
-  onGenerateAvatar,
-}: CharacterCardProps) {
+export function CharacterCard({ player }: CharacterCardProps) {
   if (!player) {
     return (
       <aside className="character-card character-card--empty">
@@ -30,17 +24,6 @@ export function CharacterCard({
           <div className="character-card__name">{player.name}</div>
         </div>
 
-        <button
-          className="character-card__avatar-btn"
-          onClick={onGenerateAvatar}
-          disabled={loading}
-        >
-          {loading
-            ? "Генерация..."
-            : player.avatarUrl
-              ? "Обновить портрет"
-              : "Создать портрет"}
-        </button>
       </div>
 
       <div className="character-card__avatar-wrap">

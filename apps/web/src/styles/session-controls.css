@@ -1,30 +1,67 @@
 ﻿.session-controls {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid rgba(164, 122, 74, 0.7);
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(252, 242, 221, 0.94), rgba(235, 215, 175, 0.9));
+  position: relative;
 }
 
-.session-controls__button {
-  width: 100%;
+.session-controls__trigger {
+  min-width: 94px;
   border: 1px solid #8b5e36;
   background: linear-gradient(180deg, #f4ddb2, #d8b479);
   color: #2f1b0a;
-  border-radius: 8px;
-  padding: 7px 10px;
+  border-radius: 999px;
+  padding: 7px 14px;
   cursor: pointer;
+  box-shadow: 0 5px 14px rgba(28, 17, 9, 0.18);
 }
 
-.session-controls__button:hover {
+.session-controls__trigger.is-open {
+  background: linear-gradient(180deg, #f8e6c0, #e1c089);
+}
+
+.session-controls__trigger:hover {
   background: linear-gradient(180deg, #f8e7c5, #dfbe86);
 }
 
-@media (max-width: 1100px) {
-  .session-controls {
-    grid-template-columns: 1fr;
+.session-controls__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 188px;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(164, 122, 74, 0.78);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(252, 242, 221, 0.98), rgba(235, 215, 175, 0.95));
+  box-shadow:
+    0 12px 28px rgba(15, 9, 5, 0.26),
+    inset 0 1px 0 rgba(255, 246, 227, 0.6);
+  z-index: 10;
+}
+
+.session-controls__menu-button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(139, 94, 54, 0.34);
+  background: rgba(255, 248, 233, 0.72);
+  color: #2f1b0a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.session-controls__menu-button:hover:not(:disabled) {
+  background: rgba(249, 234, 200, 0.96);
+}
+
+.session-controls__menu-button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .session-controls__menu {
+    left: 0;
+    right: auto;
   }
 }

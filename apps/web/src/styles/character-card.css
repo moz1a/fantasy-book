@@ -4,7 +4,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 12px 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -27,7 +27,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .character-card__title {
@@ -39,36 +39,15 @@
 }
 
 .character-card__name {
-  margin-top: 4px;
-  font-size: 1.2rem;
+  margin-top: 2px;
+  font-size: 1.28rem;
   font-weight: 700;
   color: #4a2810;
 }
 
-.character-card__avatar-btn {
-  border: 1px solid #8b5e36;
-  background: linear-gradient(180deg, #f4ddb2, #d8b479);
-  color: #2f1b0a;
-  border-radius: 8px;
-  padding: 7px 11px;
-  cursor: pointer;
-  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
-}
-
-.character-card__avatar-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: linear-gradient(180deg, #f8e7c5, #dfbe86);
-  box-shadow: 0 4px 14px rgba(56, 33, 15, 0.2);
-}
-
-.character-card__avatar-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
 .character-card__avatar-wrap {
   width: 100%;
-  height: clamp(108px, 17vh, 160px);
+  height: clamp(176px, 30vh, 290px);
   border-radius: 10px;
   overflow: hidden;
   background: rgba(80, 60, 20, 0.08);
@@ -123,7 +102,7 @@
 }
 
 .character-card__section {
-  padding-top: 8px;
+  padding-top: 6px;
   border-top: 1px solid rgba(139, 95, 54, 0.16);
 }
 
@@ -136,6 +115,7 @@
   margin-bottom: 4px;
   font-weight: 700;
   color: #6d3e1d;
+  font-size: 0.95rem;
 }
 
 .character-card__list {
@@ -145,7 +125,7 @@
 }
 
 .character-card__list li + li {
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .character-card__muted,
@@ -157,9 +137,5 @@
   .character-card__header {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .character-card__avatar-btn {
-    width: 100%;
   }
 }

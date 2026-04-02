@@ -11,7 +11,7 @@
 }
 
 .container {
-  width: min(100%, 1480px);
+  width: min(100%, 1520px);
   height: 100%;
   margin: 0 auto;
   display: flex;
@@ -27,7 +27,7 @@
   flex: 0 0 auto;
   color: #f6ead3;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-  font-size: clamp(1.3rem, 1.8vw, 1.95rem);
+  font-size: clamp(1.18rem, 1.55vw, 1.7rem);
   letter-spacing: 0.04em;
   line-height: 1.1;
 }
@@ -44,38 +44,51 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   overflow: hidden;
   background: #222117 url('https://www.transparenttextures.com/patterns/wood.png');
   border-radius: 18px;
   box-shadow: 18px 22px 48px rgba(12, 8, 5, 0.42), inset 0 0 0 1px rgba(255, 233, 195, 0.08);
-  padding: 10px 12px 12px;
+  padding: 8px 10px 10px;
 }
 
 .book-shell__topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 40px;
+  justify-content: center;
+  min-height: 28px;
+}
+
+.book-shell__book-column {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .book-shell__nav {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   min-width: 0;
+  padding: 6px 12px;
+  border: 1px solid rgba(216, 188, 132, 0.35);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(59, 40, 22, 0.82), rgba(33, 22, 12, 0.86));
+  box-shadow: inset 0 1px 0 rgba(255, 233, 195, 0.08);
+  align-self: center;
 }
 
 .book-shell__container {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(268px, 23vw, 320px);
+  grid-template-columns: minmax(0, 1fr) clamp(232px, 19vw, 276px);
   align-items: stretch;
-  gap: 12px;
+  gap: 10px;
 }
 
 .book-shell__book-area {
@@ -85,16 +98,21 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 4px;
+  padding: 2px 0 0;
 }
 
 .book-shell__container-column {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
   overflow: hidden;
+}
+
+.book-shell__sidebar-head {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .book-shell__counter {
@@ -110,8 +128,8 @@
   background: linear-gradient(180deg, #f2d9a9, #d2ab6c);
   color: #2d1a0a;
   border-radius: 999px;
-  padding: 6px 12px;
-  min-height: 34px;
+  padding: 5px 11px;
+  min-height: 32px;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
@@ -136,12 +154,15 @@
   }
 
   .book-shell__topbar {
-    flex-direction: column;
-    align-items: stretch;
+    justify-content: center;
   }
 
   .book-shell__container {
     grid-template-columns: 1fr;
+  }
+
+  .book-shell__book-column {
+    overflow: visible;
   }
 
   .book-shell__container-column {
