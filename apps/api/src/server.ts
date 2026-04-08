@@ -257,6 +257,7 @@ app.post("/turn", async (req, res) => {
       "25. При начале обычного боя старайся задавать врагу enemyHp и enemyMaxHp, а phase ставь opening/exchange/finisher.",
       "26. Если герой физически перешёл в новое место, комнату, зал, улицу, коридор, этаж или иную явно новую зону, обязательно укажи новую локацию в patch.location.",
       "27. Если локация не изменилась физически, не меняй patch.location.",
+      "28. Если герой получил или потерял новый предмет инвентаря или эффект состояния, обязательно указывай это в addItems, removeItems, addEffects, removeEffects",
 
       "patch может содержать только поля: hp, maxHp, gold, location, stats, addItems, removeItems, addEffects, removeEffects.",
       "Поле stats может содержать только: strength, agility, intelligence.",
