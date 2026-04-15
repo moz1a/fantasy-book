@@ -1,0 +1,267 @@
+.account-panel {
+  min-width: 0;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(164, 122, 74, 0.78);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255, 242, 210, 0.36), transparent 32%),
+    linear-gradient(180deg, rgba(250, 238, 212, 0.98), rgba(232, 210, 169, 0.96));
+  color: #2f1b0a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 246, 227, 0.58),
+    0 8px 22px rgba(15, 9, 5, 0.18);
+}
+
+.account-panel__eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7a4a25;
+}
+
+.account-panel__name {
+  margin-top: 3px;
+  color: #4a2810;
+  font-size: 1rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.account-panel__email,
+.account-panel__muted {
+  margin-top: 2px;
+  color: rgba(60, 45, 22, 0.76);
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.account-panel__status {
+  margin-top: 7px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  border: 1px solid rgba(139, 95, 54, 0.28);
+}
+
+.account-panel__status.is-verified {
+  color: #244418;
+  background: rgba(102, 148, 65, 0.14);
+}
+
+.account-panel__status.is-pending {
+  color: #684516;
+  background: rgba(196, 145, 67, 0.18);
+}
+
+.account-panel__notice {
+  margin-top: 7px;
+  color: #5b3416;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.account-panel__actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.account-panel__button {
+  width: 100%;
+  border: 1px solid #8f6134;
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: linear-gradient(180deg, #c98f4f, #a16834);
+  color: #fdf1dc;
+  cursor: pointer;
+}
+
+.account-panel__button--secondary {
+  margin-top: 7px;
+  background: linear-gradient(180deg, #f5e2bc, #d7b17a);
+  color: #34210f;
+}
+
+.account-panel__notice + .account-panel__button,
+.account-panel__status + .account-panel__button {
+  margin-top: 8px;
+}
+
+.account-panel__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.auth-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 28px 14px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(245, 219, 165, 0.18), transparent 36%),
+    linear-gradient(160deg, rgba(26, 16, 8, 0.92), rgba(59, 38, 21, 0.92)),
+    #222117 url("https://www.transparenttextures.com/patterns/wood.png");
+}
+
+.auth-shell {
+  width: min(100%, 520px);
+  display: grid;
+  gap: 12px;
+}
+
+.auth-back {
+  justify-self: start;
+  border: 1px solid rgba(216, 188, 132, 0.58);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, rgba(59, 40, 22, 0.88), rgba(33, 22, 12, 0.9));
+  color: #f6ead3;
+  cursor: pointer;
+}
+
+.auth-panel {
+  position: relative;
+  padding: clamp(20px, 4vw, 34px);
+  border: 1px solid #b79263;
+  border-radius: 8px;
+  color: #2b1707;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(133, 85, 45, 0.16), transparent 34%),
+    radial-gradient(circle at 82% 78%, rgba(119, 73, 37, 0.14), transparent 42%),
+    linear-gradient(120deg, #f2dfbe 0%, #e8d1aa 45%, #f0dbb7 100%);
+  box-shadow:
+    inset 0 0 60px rgba(129, 86, 45, 0.18),
+    0 24px 56px rgba(9, 5, 2, 0.42);
+  overflow: hidden;
+}
+
+.auth-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(106, 71, 40, 0.025),
+    rgba(106, 71, 40, 0.025) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+.auth-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-panel__ornament {
+  margin-bottom: 12px;
+  text-align: center;
+  color: #7d4a20;
+  letter-spacing: 0.24em;
+}
+
+.auth-panel__eyebrow {
+  margin: 0 0 6px;
+  color: #744822;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-panel__title {
+  margin: 0;
+  color: #4a2810;
+  font-size: clamp(1.7rem, 6vw, 2.4rem);
+  line-height: 1.05;
+}
+
+.auth-panel__lead {
+  margin: 10px 0 18px;
+  color: #643816;
+  line-height: 1.5;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form__label {
+  display: grid;
+  gap: 5px;
+  color: #5c3416;
+  font-weight: 700;
+}
+
+.auth-form__input {
+  width: 100%;
+  border: 1px solid #a87948;
+  border-radius: 8px;
+  padding: 10px 11px;
+  background: #efe1bf;
+  color: #2f1a0b;
+  box-shadow: inset 0 2px 6px rgba(70, 43, 20, 0.12);
+}
+
+.auth-form__input:focus {
+  outline: 2px solid rgba(130, 77, 38, 0.38);
+  outline-offset: 1px;
+}
+
+.auth-form__error,
+.auth-form__notice {
+  border-radius: 8px;
+  padding: 9px 10px;
+  line-height: 1.4;
+}
+
+.auth-form__error {
+  border: 1px solid rgba(126, 36, 22, 0.44);
+  background: rgba(143, 54, 35, 0.12);
+  color: #6c1e12;
+}
+
+.auth-form__notice {
+  border: 1px solid rgba(86, 116, 54, 0.42);
+  background: rgba(101, 135, 63, 0.14);
+  color: #244418;
+}
+
+.auth-form__submit {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #8f6134;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, #c98f4f, #a16834);
+  color: #fdf1dc;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.auth-form__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+}
+
+.auth-panel__link {
+  margin-top: 14px;
+  width: 100%;
+  border: 1px solid rgba(139, 94, 54, 0.34);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: rgba(255, 248, 233, 0.62);
+  color: #3a210d;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .auth-screen {
+    align-items: start;
+  }
+}

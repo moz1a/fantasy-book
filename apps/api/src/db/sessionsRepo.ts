@@ -152,18 +152,37 @@ export async function loadSession(sessionId: string): Promise<GameState | null> 
   };
 }
 
-export async function upsertSession(state: GameState): Promise<void> {
+export async function upsertSession(
+  state: GameState,
+  ownerUserId?: string | null
+): Promise<void> {
   const stateWithoutMedia = stripTransientMedia(state);
 
   await pool.query(
     `
-      INSERT INTO sessions (id, state_json, updated_at)
-      VALUES ($1, $2, NOW())
+      INSERT INTO sessions (id, user_id, state_json, updated_at)
+      VALUES ($1, $2, $3, NOW())
       ON CONFLICT (id) DO UPDATE SET
         state_json = EXCLUDED.state_json,
+        user_id = COALESCE(sessions.user_id, EXCLUDED.user_id),
         updated_at = NOW()
     `,
-    [state.sessionId, stateWithoutMedia]
+    [state.sessionId, ownerUserId ?? null, stateWithoutMedia]
+  );
+}
+
+export async function attachSessionToUser(
+  sessionId: string,
+  userId: string
+): Promise<void> {
+  await pool.query(
+    `
+      UPDATE sessions
+      SET user_id = COALESCE(user_id, $2),
+          updated_at = NOW()
+      WHERE id = $1
+    `,
+    [sessionId, userId]
   );
 }
 

@@ -72,6 +72,23 @@ export type CharacterAvatarResponse = {
   imageUrl: string;
 };
 
+export type AuthUser = {
+  id: string;
+  username: string;
+  email: string;
+  emailVerified: boolean;
+  createdAt: string;
+};
+
+export type AuthResponse = {
+  user: AuthUser;
+  message?: string;
+};
+
+export type CurrentUserResponse = {
+  user: AuthUser | null;
+};
+
 async function readJson(res: Response): Promise<unknown> {
   return await res.json();
 }
@@ -86,7 +103,9 @@ function errorMessage(data: unknown, fallback: string) {
 }
 
 export async function getSession(sessionId: string) {
-  const res = await fetch(`/api/session/${encodeURIComponent(sessionId)}`);
+  const res = await fetch(`/api/session/${encodeURIComponent(sessionId)}`, {
+    credentials: "include",
+  });
   const data = await readJson(res);
 
   if (!res.ok) throw new Error(errorMessage(data, `HTTP ${res.status}`));
@@ -96,6 +115,7 @@ export async function getSession(sessionId: string) {
 export async function postTurn(params: { sessionId?: string; action: string }) {
   const res = await fetch("/api/turn", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
   });
@@ -109,6 +129,7 @@ export async function postTurn(params: { sessionId?: string; action: string }) {
 export async function createSession() {
   const res = await fetch("/api/session", {
     method: "POST",
+    credentials: "include",
   });
 
   const data = await readJson(res);
@@ -123,6 +144,7 @@ export async function generateIllustration(params: {
 }) {
   const res = await fetch("/api/illustration", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
   });
@@ -141,6 +163,7 @@ export async function generateCharacterAvatar(params: {
 }) {
   const res = await fetch("/api/character/avatar", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
   });
@@ -152,4 +175,103 @@ export async function generateCharacterAvatar(params: {
   }
 
   return data as CharacterAvatarResponse;
+}
+
+export async function registerUser(params: {
+  username: string;
+  email: string;
+  password: string;
+}) {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  }
+
+  return data as AuthResponse;
+}
+
+export async function loginUser(params: { login: string; password: string }) {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  }
+
+  return data as AuthResponse;
+}
+
+export async function logoutUser() {
+  const res = await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  }
+
+  return data as { ok: boolean };
+}
+
+export async function getCurrentUser() {
+  const res = await fetch("/api/auth/me", {
+    credentials: "include",
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  }
+
+  return data as CurrentUserResponse;
+}
+
+export async function verifyEmail(token: string) {
+  const res = await fetch("/api/auth/verify-email", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  }
+
+  return data as AuthResponse;
+}
+
+export async function resendVerificationEmail() {
+  const res = await fetch("/api/auth/resend-verification", {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) {
+    throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  }
+
+  return data as AuthResponse;
 }

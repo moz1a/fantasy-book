@@ -13,6 +13,7 @@ import {
 } from "./game/types.js";
 
 import {
+  attachSessionToUser,
   loadSession,
   upsertCharacterPortrait,
   upsertSession,
@@ -20,6 +21,8 @@ import {
 } from "./db/sessionsRepo.js";
 
 import { initDb } from "./db/db.js";
+import { createAuthRouter } from "./auth/routes.js";
+import { getRequestUser } from "./auth/session.js";
 import { gmReplySchema } from "./game/gmSchema.js";
 import { elizaChat } from "./llm/llmEliza.js";
 
@@ -31,8 +34,30 @@ import { parseAndNormalizeModelJson } from "./game/normalization.js";
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = (
+  process.env.CORS_ORIGINS ??
+  process.env.APP_PUBLIC_URL ??
+  "http://localhost:5173,http://127.0.0.1:5173"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    credentials: true,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, false);
+    },
+  })
+);
 app.use(express.json());
+app.use("/auth", createAuthRouter());
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
@@ -183,6 +208,7 @@ function choicesTooSimilar(choices: Array<{ text: string }>) {
 
 app.post("/turn", async (req, res) => {
   try {
+    const authUser = await getRequestUser(req);
     const sessionId: string = req.body?.sessionId ?? randomUUID();
     const action: string = String(req.body?.action ?? "").trim();
 
@@ -440,7 +466,7 @@ app.post("/turn", async (req, res) => {
       turns: [...state.turns, turn],
     };
 
-    await upsertSession(state);
+    await upsertSession(state, authUser?.id);
     res.json({ state });
   } catch (e: unknown) {
     console.error("TURN ERROR:", e);
@@ -449,11 +475,12 @@ app.post("/turn", async (req, res) => {
   }
 });
 
-app.post("/session", async (_req, res) => {
+app.post("/session", async (req, res) => {
+  const authUser = await getRequestUser(req);
   const sessionId = randomUUID();
   const state = createNewState(sessionId);
 
-  await upsertSession(state);
+  await upsertSession(state, authUser?.id);
 
   res.json({ state });
 });
@@ -488,6 +515,11 @@ app.post("/illustration", async (req, res) => {
     if (!state) {
       res.status(404).json({ error: "session not found", sessionId });
       return;
+    }
+
+    const authUser = await getRequestUser(req);
+    if (authUser) {
+      await attachSessionToUser(sessionId, authUser.id);
     }
 
     const turn =
@@ -547,6 +579,11 @@ app.post("/character/avatar", async (req, res) => {
     if (!state) {
       res.status(404).json({ error: "session not found", sessionId });
       return;
+    }
+
+    const authUser = await getRequestUser(req);
+    if (authUser) {
+      await attachSessionToUser(sessionId, authUser.id);
     }
 
     const portraitDescription = [

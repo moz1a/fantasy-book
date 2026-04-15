@@ -1,16 +1,25 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
 import HTMLFlipBook from "react-pageflip";
 import {
   createSession,
   getSession,
+  getCurrentUser,
   postTurn,
   generateIllustration,
   generateCharacterAvatar,
+  loginUser,
+  logoutUser,
+  registerUser,
+  resendVerificationEmail,
+  verifyEmail,
+  type AuthUser,
   type GameState,
   type Turn,
 } from "./api";
 import { ActionInput } from "./components/ActionInput";
+import { AccountPanel } from "./components/AccountPanel";
+import { AuthPage, type AuthMode } from "./components/AuthPage";
 import { SessionControls } from "./components/SessionControls";
 import { StatusPanel } from "./components/StatusPanel";
 // import { ThemeSwitcher } from "./components/ThemeSwitcher";
@@ -21,6 +30,7 @@ import "./styles/session-controls.css";
 import "./styles/status-panel.css";
 import "./styles/theme-switcher.css";
 import "./styles/character-card.css";
+import "./styles/auth.css";
 import { CharacterCard } from "./components/CharacterCard";
 
 // const THEMES = [
@@ -33,12 +43,43 @@ const EMPTY_RESPONSE = "Нажми «Новая игра» и сделай пе�
 const PAGE_RATIO = 520 / 680;
 const ACTION_OVERLAY_HEIGHT = 196;
 
+type AppRoute =
+  | { screen: "game" }
+  | { screen: AuthMode; token: string };
+
+function readAppRoute(): AppRoute {
+  if (typeof window === "undefined") {
+    return { screen: "game" };
+  }
+
+  const path = window.location.pathname;
+  const params = new URLSearchParams(window.location.search);
+
+  if (path === "/auth/login") {
+    return { screen: "login", token: "" };
+  }
+
+  if (path === "/auth/register") {
+    return { screen: "register", token: "" };
+  }
+
+  if (path === "/auth/verify") {
+    return { screen: "verify", token: params.get("token") ?? "" };
+  }
+
+  return { screen: "game" };
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
 export default function App() {
   // const [themeHref, setThemeHref] = useState("/themes/gothic-library.css");
+  const [route, setRoute] = useState<AppRoute>(() => readAppRoute());
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authNotice, setAuthNotice] = useState("");
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -57,6 +98,87 @@ export default function App() {
     width: typeof window !== "undefined" ? window.innerWidth : 1440,
     height: typeof window !== "undefined" ? window.innerHeight : 900,
   }));
+
+  const navigateTo = useCallback((path: string) => {
+    window.history.pushState(null, "", path);
+    setRoute(readAppRoute());
+  }, []);
+
+  const goToGame = useCallback(() => {
+    navigateTo("/");
+  }, [navigateTo]);
+
+  const goToLogin = useCallback(() => {
+    navigateTo("/auth/login");
+  }, [navigateTo]);
+
+  const goToRegister = useCallback(() => {
+    navigateTo("/auth/register");
+  }, [navigateTo]);
+
+  const switchAuthMode = useCallback(
+    (mode: "login" | "register") => {
+      navigateTo(mode === "login" ? "/auth/login" : "/auth/register");
+    },
+    [navigateTo]
+  );
+
+  const handleLogin = useCallback(async (params: { login: string; password: string }) => {
+    const data = await loginUser(params);
+    setAuthUser(data.user);
+    setAuthNotice(
+      data.user.emailVerified
+        ? "Вход выполнен."
+        : "Вход выполнен. Проверь почту, чтобы завершить печать аккаунта."
+    );
+    return data;
+  }, []);
+
+  const handleRegister = useCallback(
+    async (params: { username: string; email: string; password: string }) => {
+      const data = await registerUser(params);
+      setAuthUser(data.user);
+      setAuthNotice(data.message ?? "Аккаунт создан. Проверь почту.");
+      return data;
+    },
+    []
+  );
+
+  const handleVerifyEmail = useCallback(async (token: string) => {
+    const data = await verifyEmail(token);
+    setAuthUser(data.user);
+    setAuthNotice(data.message ?? "Почта подтверждена.");
+    return data;
+  }, []);
+
+  const handleResendVerification = useCallback(async () => {
+    const data = await resendVerificationEmail();
+    setAuthUser(data.user);
+    setAuthNotice(data.message ?? "Новая ссылка отправлена.");
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    await logoutUser();
+    setAuthUser(null);
+    setAuthNotice("Ты вышел из аккаунта. Гостевая книга осталась открыта.");
+  }, []);
+
+  useEffect(() => {
+    function handlePopState() {
+      setRoute(readAppRoute());
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    setAuthLoading(true);
+    getCurrentUser()
+      .then((data) => setAuthUser(data.user))
+      .catch(() => setAuthUser(null))
+      .finally(() => setAuthLoading(false));
+  }, []);
 
   useEffect(() => {
     // const el = document.getElementById("theme-link") as HTMLLinkElement | null;
@@ -242,6 +364,20 @@ export default function App() {
     if (state === "read") {
       setIsBookFlipping(false);
     }
+  }
+
+  if (route.screen !== "game") {
+    return (
+      <AuthPage
+        mode={route.screen}
+        verifyToken={route.token}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        onVerifyEmail={handleVerifyEmail}
+        onBackToGame={goToGame}
+        onSwitchMode={switchAuthMode}
+      />
+    );
   }
 
   return (
@@ -447,6 +583,15 @@ export default function App() {
 
             <div className="book-shell__container-column">
               <div className="book-shell__sidebar-head">
+                <AccountPanel
+                  user={authUser}
+                  loading={authLoading}
+                  notice={authNotice}
+                  onLoginClick={goToLogin}
+                  onRegisterClick={goToRegister}
+                  onResendVerification={handleResendVerification}
+                  onLogout={handleLogout}
+                />
                 <SessionControls
                   onNewGame={async () => {
                     try {
