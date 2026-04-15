@@ -214,6 +214,24 @@ export async function attachSessionToUser(
   return (result.rowCount ?? 0) > 0;
 }
 
+export async function loadLatestSessionForUser(
+  userId: string
+): Promise<GameState | null> {
+  const result = await pool.query<{ id: string }>(
+    `
+      SELECT id
+      FROM sessions
+      WHERE user_id = $1
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `,
+    [userId]
+  );
+
+  const sessionId = result.rows[0]?.id;
+  return sessionId ? loadSession(sessionId, userId) : null;
+}
+
 export async function upsertTurnIllustration(params: {
   sessionId: string;
   turnId: string;

@@ -61,6 +61,8 @@ export type GameState = {
 
 export type TurnResponse = { state: GameState };
 
+export type CurrentSessionResponse = { state: GameState | null };
+
 export type IllustrationResponse = {
   state: GameState;
   turnId: string;
@@ -136,6 +138,16 @@ export async function createSession() {
 
   if (!res.ok) throw new Error(errorMessage(data, `HTTP ${res.status}`));
   return data as TurnResponse;
+}
+
+export async function getCurrentSession() {
+  const res = await fetch("/api/sessions/current", {
+    credentials: "include",
+  });
+  const data = await readJson(res);
+
+  if (!res.ok) throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  return data as CurrentSessionResponse;
 }
 
 export async function claimSession(sessionId: string) {

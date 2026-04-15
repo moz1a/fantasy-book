@@ -4,7 +4,9 @@ import HTMLFlipBook from "react-pageflip";
 import {
   claimSession,
   createSession,
+  getCurrentSession,
   getCurrentUser,
+  getSession,
   postTurn,
   generateIllustration,
   generateCharacterAvatar,
@@ -42,6 +44,11 @@ import { CharacterCard } from "./components/CharacterCard";
 const EMPTY_RESPONSE = "Нажми «Новая игра» и сделай первый ход. Ответ мастера появится на правой странице.";
 const PAGE_RATIO = 520 / 680;
 const ACTION_OVERLAY_HEIGHT = 196;
+const LEGACY_SESSION_KEY = "game:sessionId";
+
+function getUserSessionKey(userId: string) {
+  return `${LEGACY_SESSION_KEY}:${userId}`;
+}
 
 type AppRoute =
   | { screen: "game" }
@@ -96,7 +103,6 @@ export default function App() {
   } | null>(null);
   const bookRef = useRef<any>(null);
   const shouldAnimateToLastRef = useRef(false);
-  const SESSION_KEY = "game:sessionId";
   const [illustrationLoadingTurnId, setIllustrationLoadingTurnId] = useState<string | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [viewportSize, setViewportSize] = useState(() => ({
@@ -166,11 +172,22 @@ export default function App() {
     setAuthNotice(data.message ?? "Новая ссылка отправлена.");
   }, []);
 
+  const saveSessionIdForCurrentUser = useCallback(
+    (sessionId: string) => {
+      if (!authUser) return;
+
+      localStorage.setItem(getUserSessionKey(authUser.id), sessionId);
+      localStorage.removeItem(LEGACY_SESSION_KEY);
+    },
+    [authUser]
+  );
+
   const handleLogout = useCallback(async () => {
     await logoutUser();
     setAuthUser(null);
     setGameState(null);
     setAuthNotice("Ты вышел из аккаунта.");
+    localStorage.removeItem(LEGACY_SESSION_KEY);
     navigateTo("/auth/login");
   }, [navigateTo]);
 
@@ -202,17 +219,71 @@ export default function App() {
       return;
     }
 
-    const savedSessionId = localStorage.getItem(SESSION_KEY);
-    if (!savedSessionId) return;
+    let cancelled = false;
 
     setLoading(true);
-    claimSession(savedSessionId)
-      .then((data) => setGameState(data.state))
+
+    async function loadAccountSession() {
+      if (!authUser) return;
+
+      setError("");
+      setGameState(null);
+
+      const userSessionKey = getUserSessionKey(authUser.id);
+      const savedSessionId = localStorage.getItem(userSessionKey);
+      const legacySessionId = localStorage.getItem(LEGACY_SESSION_KEY);
+
+      if (savedSessionId) {
+        try {
+          const data = await getSession(savedSessionId);
+          if (!cancelled) {
+            setGameState(data.state);
+            saveSessionIdForCurrentUser(data.state.sessionId);
+            return;
+          }
+        } catch {
+          localStorage.removeItem(userSessionKey);
+        }
+      }
+
+      if (legacySessionId) {
+        try {
+          const data = await claimSession(legacySessionId);
+          if (!cancelled) {
+            setGameState(data.state);
+            saveSessionIdForCurrentUser(data.state.sessionId);
+            return;
+          }
+        } catch {
+          localStorage.removeItem(LEGACY_SESSION_KEY);
+        }
+      }
+
+      const data = await getCurrentSession();
+      if (!cancelled) {
+        setGameState(data.state);
+        if (data.state) {
+          saveSessionIdForCurrentUser(data.state.sessionId);
+        }
+      }
+    }
+
+    loadAccountSession()
       .catch((e: any) => {
-        setError(e?.message ?? "Ошибка загрузки сессии");
+        if (!cancelled) {
+          setError(e?.message ?? "Ошибка загрузки сессии");
+        }
       })
-      .finally(() => setLoading(false));
-  }, [authLoading, authUser]);
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, authUser, saveSessionIdForCurrentUser]);
 
   useEffect(() => {
     function syncViewport() {
@@ -245,13 +316,15 @@ export default function App() {
     shouldAnimateToLastRef.current = true;
 
     try {
-      const savedSessionId = localStorage.getItem(SESSION_KEY);
+      const savedSessionId = authUser
+        ? gameState?.sessionId ?? localStorage.getItem(getUserSessionKey(authUser.id))
+        : undefined;
       const data = await postTurn({
         sessionId: savedSessionId ?? undefined,
         action: actionToSend,
       });
 
-      localStorage.setItem(SESSION_KEY, data.state.sessionId);
+      saveSessionIdForCurrentUser(data.state.sessionId);
       setGameState(data.state);
       return true;
     } catch (e: any) {
@@ -277,6 +350,7 @@ export default function App() {
 
       const data = await generateIllustration({ sessionId, turnId });
 
+      saveSessionIdForCurrentUser(data.state.sessionId);
       setGameState(data.state);
     } catch (e: any) {
       setError(e?.message ?? "Ошибка генерации иллюстрации");
@@ -298,6 +372,7 @@ export default function App() {
       setAvatarLoading(true);
 
       const data = await generateCharacterAvatar({ sessionId });
+      saveSessionIdForCurrentUser(data.state.sessionId);
       setGameState(data.state);
     } catch (e: any) {
       setError(e?.message ?? "Ошибка генерации портрета");
@@ -655,7 +730,7 @@ export default function App() {
 
                       const data = await createSession();
                       shouldAnimateToLastRef.current = false;
-                      localStorage.setItem(SESSION_KEY, data.state.sessionId);
+                      saveSessionIdForCurrentUser(data.state.sessionId);
                       setGameState(data.state);
                       setActiveSpread(0);
                       setPendingAction(null);

@@ -14,6 +14,7 @@ import {
 
 import {
   attachSessionToUser,
+  loadLatestSessionForUser,
   loadSession,
   SessionAccessError,
   upsertCharacterPortrait,
@@ -63,6 +64,19 @@ app.use("/auth", createAuthRouter());
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get("/sessions/current", requireAuth, async (_req, res) => {
+  try {
+    const authUser = res.locals.authUser as AuthUser;
+    const state = await loadLatestSessionForUser(authUser.id);
+
+    res.json({ state });
+  } catch (e: unknown) {
+    console.error("CURRENT SESSION LOAD ERROR:", e);
+    const message = e instanceof Error ? e.message : "server error";
+    res.status(500).json({ error: message });
+  }
 });
 
 app.get("/session/:id", requireAuth, async (req, res) => {
@@ -280,24 +294,24 @@ app.post("/turn", requireAuth, async (req, res) => {
       "8. Плохие рискованные решения могут снижать hp или накладывать effects.",
       "9. Еда, отдых, удачное лечение и безопасная передышка могут восстанавливать hp и снимать effects.",
       "10. choices должны быть тремя РАЗНЫМИ тактиками, а не перефразировками одного и того же.",
-      "11. Хотя бы один choice должен быть смелым или неожиданным.",
-      "12. Не предлагай choice вида 'продолжать делать то же самое', если он не меняет тактику или ситуацию.",
-      "13. narrative: сначала результат действия игрока, затем реакция мира, затем новая опасность/возможность.",
-      "14. prompt всегда: 'Что ты делаешь?'.",
-      "15. narrative — 2-4 коротких абзаца.",
-      "16. В choices должно быть ровно 3 варианта.",
-      "17. Каждый choice: {id, text}. id: ^[a-z0-9_-]+$.",
-      "18. combatPatch и directorPatch всегда должны присутствовать как объекты, даже если они пустые.",
-      "19. Если forceCombat=true и ситуация допускает столкновение, начни бой или засаду в этом ходу.",
-      "20. Если бой начался или продолжается, обязательно меняй combatPatch.",
-      "21. Если произошёл крупный поворот, укажи directorPatch.lastMajorEventTurn = Pacing.nextTurn.",
-      "22. Если сцена сменила тип, укажи directorPatch.sceneKind и directorPatch.sceneGoal.",
-      "23. Не оставляй patch, combatPatch и directorPatch одновременно пустыми два хода подряд.",
-      "24. choices должны представлять 3 разные тактики: прямое действие, осторожное действие, хитрое/неожиданное действие.",
-      "25. При начале обычного боя старайся задавать врагу enemyHp и enemyMaxHp, а phase ставь opening/exchange/finisher.",
-      "26. Если герой физически перешёл в новое место, комнату, зал, улицу, коридор, этаж или иную явно новую зону, обязательно укажи новую локацию в patch.location.",
-      "27. Если локация не изменилась физически, не меняй patch.location.",
-      "28. Если герой получил или потерял новый предмет инвентаря или эффект состояния, обязательно указывай это в addItems, removeItems, addEffects, removeEffects",
+      "11. Не предлагай choice вида 'продолжать делать то же самое', если он не меняет тактику или ситуацию.",
+      "12. narrative: сначала результат действия игрока, затем реакция мира, затем новая опасность/возможность.",
+      "13. prompt всегда: 'Что ты делаешь?'.",
+      "14. narrative — 2-4 коротких абзаца.",
+      "15. В choices должно быть ровно 3 варианта.",
+      "16. Каждый choice: {id, text}. id: ^[a-z0-9_-]+$.",
+      "17. combatPatch и directorPatch всегда должны присутствовать как объекты, даже если они пустые.",
+      "18. Если forceCombat=true и ситуация допускает столкновение, начни бой или засаду в этом ходу.",
+      "19. Если бой начался или продолжается, обязательно меняй combatPatch.",
+      "20. Если произошёл крупный поворот, укажи directorPatch.lastMajorEventTurn = Pacing.nextTurn.",
+      "21. Если сцена сменила тип, укажи directorPatch.sceneKind и directorPatch.sceneGoal.",
+      "22. Не оставляй patch, combatPatch и directorPatch одновременно пустыми два хода подряд.",
+      "23. choices должны представлять 3 разные тактики: прямое действие, осторожное действие, хитрое/неожиданное действие.",
+      "24. При начале обычного боя старайся задавать врагу enemyHp и enemyMaxHp, а phase ставь opening/exchange/finisher.",
+      "25. Если герой физически перешёл в новое место, комнату, зал, улицу, коридор, этаж или иную явно новую зону, обязательно укажи новую локацию в patch.location.",
+      "26. Если локация не изменилась физически, не меняй patch.location.",
+      "27. Если герой получил или потерял новый предмет инвентаря или эффект состояния, обязательно указывай это в addItems, removeItems, addEffects, removeEffects",
+      "28. В worldSummary сохраняй основные моменты истории для своего контекста. Сильно его не увеличивай, он нужен для консистентности мира. Клади в него основную ветку повествования, квести и цели героя, при необходимости сжимай (суммаризируй) наиболее старые события",
 
       "patch может содержать только поля: hp, maxHp, gold, location, stats, addItems, removeItems, addEffects, removeEffects.",
       "Поле stats может содержать только: strength, agility, intelligence.",
@@ -594,7 +608,7 @@ app.post("/illustration", requireAuth, async (req, res) => {
       imageBase64: base64,
     });
 
-    const updatedState = await loadSession(sessionId);
+    const updatedState = await loadSession(sessionId, authUser.id);
 
     if (!updatedState) {
       res.status(500).json({ error: "failed to reload session after saving illustration" });
@@ -659,7 +673,7 @@ const imageUrl = await generateCharacterPortrait({
       imageBase64: base64,
     });
 
-    const updatedState = await loadSession(sessionId);
+    const updatedState = await loadSession(sessionId, authUser.id);
 
     if (!updatedState) {
       res.status(500).json({ error: "failed to reload session after saving character portrait" });
