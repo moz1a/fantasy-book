@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
 import HTMLFlipBook from "react-pageflip";
 import {
+  claimSession,
   createSession,
-  getSession,
   getCurrentUser,
   postTurn,
   generateIllustration,
@@ -18,8 +18,8 @@ import {
   type Turn,
 } from "./api";
 import { ActionInput } from "./components/ActionInput";
-import { AccountPanel } from "./components/AccountPanel";
 import { AuthPage, type AuthMode } from "./components/AuthPage";
+import { ProfilePage } from "./components/ProfilePage";
 import { SessionControls } from "./components/SessionControls";
 import { StatusPanel } from "./components/StatusPanel";
 // import { ThemeSwitcher } from "./components/ThemeSwitcher";
@@ -45,6 +45,7 @@ const ACTION_OVERLAY_HEIGHT = 196;
 
 type AppRoute =
   | { screen: "game" }
+  | { screen: "profile" }
   | { screen: AuthMode; token: string };
 
 function readAppRoute(): AppRoute {
@@ -65,6 +66,10 @@ function readAppRoute(): AppRoute {
 
   if (path === "/auth/verify") {
     return { screen: "verify", token: params.get("token") ?? "" };
+  }
+
+  if (path === "/profile") {
+    return { screen: "profile" };
   }
 
   return { screen: "game" };
@@ -116,6 +121,10 @@ export default function App() {
     navigateTo("/auth/register");
   }, [navigateTo]);
 
+  const goToProfile = useCallback(() => {
+    navigateTo("/profile");
+  }, [navigateTo]);
+
   const switchAuthMode = useCallback(
     (mode: "login" | "register") => {
       navigateTo(mode === "login" ? "/auth/login" : "/auth/register");
@@ -160,8 +169,10 @@ export default function App() {
   const handleLogout = useCallback(async () => {
     await logoutUser();
     setAuthUser(null);
-    setAuthNotice("Ты вышел из аккаунта. Гостевая книга осталась открыта.");
-  }, []);
+    setGameState(null);
+    setAuthNotice("Ты вышел из аккаунта.");
+    navigateTo("/auth/login");
+  }, [navigateTo]);
 
   useEffect(() => {
     function handlePopState() {
@@ -184,15 +195,24 @@ export default function App() {
     // const el = document.getElementById("theme-link") as HTMLLinkElement | null;
     // if (el) el.href = themeHref;
 
+    if (authLoading) return;
+
+    if (!authUser) {
+      setGameState(null);
+      return;
+    }
+
     const savedSessionId = localStorage.getItem(SESSION_KEY);
     if (!savedSessionId) return;
 
     setLoading(true);
-    getSession(savedSessionId)
+    claimSession(savedSessionId)
       .then((data) => setGameState(data.state))
-      .catch(() => {})
+      .catch((e: any) => {
+        setError(e?.message ?? "Ошибка загрузки сессии");
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, authUser]);
 
   useEffect(() => {
     function syncViewport() {
@@ -366,6 +386,21 @@ export default function App() {
     }
   }
 
+  if (route.screen === "profile") {
+    return (
+      <ProfilePage
+        user={authUser}
+        loading={authLoading}
+        notice={authNotice}
+        onBackToGame={goToGame}
+        onLoginClick={goToLogin}
+        onRegisterClick={goToRegister}
+        onResendVerification={handleResendVerification}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
   if (route.screen !== "game") {
     return (
       <AuthPage
@@ -376,6 +411,35 @@ export default function App() {
         onVerifyEmail={handleVerifyEmail}
         onBackToGame={goToGame}
         onSwitchMode={switchAuthMode}
+        showBackButton={Boolean(authUser)}
+      />
+    );
+  }
+
+  if (authLoading) {
+    return (
+      <main className="auth-screen">
+        <section className="auth-panel">
+          <div className="auth-panel__ornament">❦ ❦ ❦</div>
+          <p className="auth-panel__eyebrow">Проверка печати</p>
+          <h1 className="auth-panel__title">Открываем хронику</h1>
+          <p className="auth-panel__lead">Проверяем аккаунт перед входом в книгу.</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <AuthPage
+        mode="register"
+        verifyToken=""
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        onVerifyEmail={handleVerifyEmail}
+        onBackToGame={goToGame}
+        onSwitchMode={switchAuthMode}
+        showBackButton={false}
       />
     );
   }
@@ -583,15 +647,6 @@ export default function App() {
 
             <div className="book-shell__container-column">
               <div className="book-shell__sidebar-head">
-                <AccountPanel
-                  user={authUser}
-                  loading={authLoading}
-                  notice={authNotice}
-                  onLoginClick={goToLogin}
-                  onRegisterClick={goToRegister}
-                  onResendVerification={handleResendVerification}
-                  onLogout={handleLogout}
-                />
                 <SessionControls
                   onNewGame={async () => {
                     try {
@@ -610,23 +665,7 @@ export default function App() {
                       setLoading(false);
                     }
                   }}
-                  onResume={async () => {
-                    setError("");
-                    setLoading(true);
-                    try {
-                      const savedSessionId = localStorage.getItem(SESSION_KEY);
-                      if (!savedSessionId) {
-                        setError("Нет сохранённой сессии. Нажми 'Новая игра' и сделай первый ход.");
-                        return;
-                      }
-                      const data = await getSession(savedSessionId);
-                      setGameState(data.state);
-                    } catch (e: any) {
-                      setError(e?.message ?? "Ошибка загрузки сессии");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
+                  onProfile={goToProfile}
                   onGenerateAvatar={() => {
                     void requestCharacterAvatar();
                   }}

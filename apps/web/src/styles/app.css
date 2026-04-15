@@ -131,10 +131,8 @@
 }
 
 .book-shell__sidebar-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 8px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .book-shell__counter {

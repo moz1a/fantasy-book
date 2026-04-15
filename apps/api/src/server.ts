@@ -15,6 +15,7 @@ import {
 import {
   attachSessionToUser,
   loadSession,
+  SessionAccessError,
   upsertCharacterPortrait,
   upsertSession,
   upsertTurnIllustration,
@@ -22,7 +23,8 @@ import {
 
 import { initDb } from "./db/db.js";
 import { createAuthRouter } from "./auth/routes.js";
-import { getRequestUser } from "./auth/session.js";
+import { requireAuth } from "./auth/session.js";
+import type { AuthUser } from "./auth/repo.js";
 import { gmReplySchema } from "./game/gmSchema.js";
 import { elizaChat } from "./llm/llmEliza.js";
 
@@ -63,16 +65,28 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/session/:id", async (req, res) => {
-  const sessionId = String(req.params.id);
-  const state = await loadSession(sessionId);
+app.get("/session/:id", requireAuth, async (req, res) => {
+  try {
+    const sessionId = String(req.params.id);
+    const authUser = res.locals.authUser as AuthUser;
+    const state = await loadSession(sessionId, authUser.id);
 
-  if (!state) {
-    res.status(404).json({ error: "session not found", sessionId });
-    return;
+    if (!state) {
+      res.status(404).json({ error: "session not found", sessionId });
+      return;
+    }
+
+    res.json({ state });
+  } catch (e: unknown) {
+    if (e instanceof SessionAccessError) {
+      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      return;
+    }
+
+    console.error("SESSION LOAD ERROR:", e);
+    const message = e instanceof Error ? e.message : "server error";
+    res.status(500).json({ error: message });
   }
-
-  res.json({ state });
 });
 
 function formatPlayerForPrompt(player: GameState["player"]): string {
@@ -206,9 +220,9 @@ function choicesTooSimilar(choices: Array<{ text: string }>) {
   return new Set(normalized).size < 3;
 }
 
-app.post("/turn", async (req, res) => {
+app.post("/turn", requireAuth, async (req, res) => {
   try {
-    const authUser = await getRequestUser(req);
+    const authUser = res.locals.authUser as AuthUser;
     const sessionId: string = req.body?.sessionId ?? randomUUID();
     const action: string = String(req.body?.action ?? "").trim();
 
@@ -217,7 +231,7 @@ app.post("/turn", async (req, res) => {
       return;
     }
 
-    let state: GameState = (await loadSession(sessionId)) ?? createNewState(sessionId);
+    let state: GameState = (await loadSession(sessionId, authUser.id)) ?? createNewState(sessionId);
 
     const pacing = buildPacingFlags(state);
 
@@ -469,20 +483,56 @@ app.post("/turn", async (req, res) => {
     await upsertSession(state, authUser?.id);
     res.json({ state });
   } catch (e: unknown) {
+    if (e instanceof SessionAccessError) {
+      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      return;
+    }
+
     console.error("TURN ERROR:", e);
     const message = e instanceof Error ? e.message : "server error";
     res.status(500).json({ error: message });
   }
 });
 
-app.post("/session", async (req, res) => {
-  const authUser = await getRequestUser(req);
+app.post("/session", requireAuth, async (_req, res) => {
+  const authUser = res.locals.authUser as AuthUser;
   const sessionId = randomUUID();
   const state = createNewState(sessionId);
 
   await upsertSession(state, authUser?.id);
 
   res.json({ state });
+});
+
+app.post("/session/:id/claim", requireAuth, async (req, res) => {
+  const sessionId = String(req.params.id);
+  const authUser = res.locals.authUser as AuthUser;
+
+  try {
+    const attached = await attachSessionToUser(sessionId, authUser.id);
+    if (!attached) {
+      res.status(404).json({ error: "session not found or unavailable", sessionId });
+      return;
+    }
+
+    const state = await loadSession(sessionId, authUser.id);
+
+    if (!state) {
+      res.status(404).json({ error: "session not found", sessionId });
+      return;
+    }
+
+    res.json({ state });
+  } catch (e: unknown) {
+    if (e instanceof SessionAccessError) {
+      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      return;
+    }
+
+    console.error("SESSION CLAIM ERROR:", e);
+    const message = e instanceof Error ? e.message : "server error";
+    res.status(500).json({ error: message });
+  }
 });
 
 function parseDataUrl(dataUrl: string): { mimeType: string; base64: string } {
@@ -500,8 +550,9 @@ function parseDataUrl(dataUrl: string): { mimeType: string; base64: string } {
   };
 }
 
-app.post("/illustration", async (req, res) => {
+app.post("/illustration", requireAuth, async (req, res) => {
   try {
+    const authUser = res.locals.authUser as AuthUser;
     const sessionId = String(req.body?.sessionId ?? "").trim();
     const turnId = String(req.body?.turnId ?? "").trim();
 
@@ -510,17 +561,14 @@ app.post("/illustration", async (req, res) => {
       return;
     }
 
-    const state = await loadSession(sessionId);
+    const state = await loadSession(sessionId, authUser.id);
 
     if (!state) {
       res.status(404).json({ error: "session not found", sessionId });
       return;
     }
 
-    const authUser = await getRequestUser(req);
-    if (authUser) {
-      await attachSessionToUser(sessionId, authUser.id);
-    }
+    await attachSessionToUser(sessionId, authUser.id);
 
     const turn =
       state.turns.find((t) => t.id === turnId) ??
@@ -559,14 +607,20 @@ app.post("/illustration", async (req, res) => {
       imageUrl,
     });
   } catch (e: unknown) {
+    if (e instanceof SessionAccessError) {
+      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      return;
+    }
+
     console.error("ILLUSTRATION ERROR:", e);
     const message = e instanceof Error ? e.message : "server error";
     res.status(500).json({ error: message });
   }
 });
 
-app.post("/character/avatar", async (req, res) => {
+app.post("/character/avatar", requireAuth, async (req, res) => {
   try {
+    const authUser = res.locals.authUser as AuthUser;
     const sessionId = String(req.body?.sessionId ?? "").trim();
 
     if (!sessionId) {
@@ -574,17 +628,14 @@ app.post("/character/avatar", async (req, res) => {
       return;
     }
 
-    const state = await loadSession(sessionId);
+    const state = await loadSession(sessionId, authUser.id);
 
     if (!state) {
       res.status(404).json({ error: "session not found", sessionId });
       return;
     }
 
-    const authUser = await getRequestUser(req);
-    if (authUser) {
-      await attachSessionToUser(sessionId, authUser.id);
-    }
+    await attachSessionToUser(sessionId, authUser.id);
 
     const portraitDescription = [
       `Имя героя: ${state.player.name}.`,
@@ -620,6 +671,11 @@ const imageUrl = await generateCharacterPortrait({
       imageUrl,
     });
   } catch (e: unknown) {
+    if (e instanceof SessionAccessError) {
+      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      return;
+    }
+
     console.error("CHARACTER AVATAR ERROR:", e);
     const message = e instanceof Error ? e.message : "server error";
     res.status(500).json({ error: message });

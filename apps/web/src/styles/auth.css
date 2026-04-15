@@ -107,8 +107,27 @@
     #222117 url("https://www.transparenttextures.com/patterns/wood.png");
 }
 
+.profile-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 28px 14px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(245, 219, 165, 0.18), transparent 36%),
+    linear-gradient(160deg, rgba(26, 16, 8, 0.92), rgba(59, 38, 21, 0.92)),
+    #222117 url("https://www.transparenttextures.com/patterns/wood.png");
+}
+
 .auth-shell {
   width: min(100%, 520px);
+  display: grid;
+  gap: 12px;
+}
+
+.profile-shell {
+  width: min(100%, 560px);
   display: grid;
   gap: 12px;
 }
@@ -139,6 +158,22 @@
   overflow: hidden;
 }
 
+.profile-panel {
+  position: relative;
+  padding: clamp(20px, 4vw, 34px);
+  border: 1px solid #b79263;
+  border-radius: 8px;
+  color: #2b1707;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(133, 85, 45, 0.16), transparent 34%),
+    radial-gradient(circle at 82% 78%, rgba(119, 73, 37, 0.14), transparent 42%),
+    linear-gradient(120deg, #f2dfbe 0%, #e8d1aa 45%, #f0dbb7 100%);
+  box-shadow:
+    inset 0 0 60px rgba(129, 86, 45, 0.18),
+    0 24px 56px rgba(9, 5, 2, 0.42);
+  overflow: hidden;
+}
+
 .auth-panel::after {
   content: "";
   position: absolute;
@@ -153,7 +188,26 @@
   );
 }
 
+.profile-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(106, 71, 40, 0.025),
+    rgba(106, 71, 40, 0.025) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
 .auth-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-panel > * {
   position: relative;
   z-index: 1;
 }
@@ -260,8 +314,35 @@
   cursor: pointer;
 }
 
+.profile-muted {
+  color: rgba(60, 45, 22, 0.76);
+  line-height: 1.45;
+}
+
+.profile-actions,
+.profile-account {
+  display: grid;
+  gap: 9px;
+}
+
+.profile-account__name {
+  color: #4a2810;
+  font-size: 1.34rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.profile-account__email {
+  color: rgba(60, 45, 22, 0.76);
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 768px) {
   .auth-screen {
+    align-items: start;
+  }
+
+  .profile-screen {
     align-items: start;
   }
 }

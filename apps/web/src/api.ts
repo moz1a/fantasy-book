@@ -138,6 +138,18 @@ export async function createSession() {
   return data as TurnResponse;
 }
 
+export async function claimSession(sessionId: string) {
+  const res = await fetch(`/api/session/${encodeURIComponent(sessionId)}/claim`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data = await readJson(res);
+
+  if (!res.ok) throw new Error(errorMessage(data, `HTTP ${res.status}`));
+  return data as TurnResponse;
+}
+
 export async function generateIllustration(params: {
   sessionId: string;
   turnId: string;

@@ -1,6 +1,6 @@
 ﻿type SessionControlsProps = {
   onNewGame: () => void;
-  onResume: () => void | Promise<void>;
+  onProfile: () => void;
   onGenerateAvatar: () => void;
   canGenerateAvatar: boolean;
   avatarLoading: boolean;
@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 
 export function SessionControls({
   onNewGame,
-  onResume,
+  onProfile,
   onGenerateAvatar,
   canGenerateAvatar,
   avatarLoading,
@@ -57,10 +57,10 @@ export function SessionControls({
           </button>
           <button
             className="session-controls__menu-button"
-            onClick={() => runAction(onResume)}
+            onClick={() => runAction(onProfile)}
             type="button"
           >
-            Продолжить
+            Профиль
           </button>
           <button
             className="session-controls__menu-button"

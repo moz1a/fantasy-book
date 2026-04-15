@@ -16,6 +16,7 @@ type AuthPageProps = {
   onVerifyEmail: (token: string) => Promise<AuthResponse>;
   onBackToGame: () => void;
   onSwitchMode: (mode: "login" | "register") => void;
+  showBackButton?: boolean;
 };
 
 function getErrorMessage(error: unknown): string {
@@ -30,6 +31,7 @@ export function AuthPage({
   onVerifyEmail,
   onBackToGame,
   onSwitchMode,
+  showBackButton = true,
 }: AuthPageProps) {
   const [login, setLogin] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -135,9 +137,11 @@ export function AuthPage({
   return (
     <main className="auth-screen">
       <div className="auth-shell">
-        <button className="auth-back" type="button" onClick={onBackToGame}>
-          Вернуться к книге
-        </button>
+        {showBackButton && (
+          <button className="auth-back" type="button" onClick={onBackToGame}>
+            Вернуться к книге
+          </button>
+        )}
 
         <section className="auth-panel">
           <div className="auth-panel__ornament">❦ ❦ ❦</div>
@@ -197,8 +201,7 @@ export function AuthPage({
               <p className="auth-panel__eyebrow">Новая запись</p>
               <h1 className="auth-panel__title">Создать аккаунт</h1>
               <p className="auth-panel__lead">
-                Почта понадобится для подтверждения. Без неё книга всё равно откроется,
-                но знак аккаунта останется незавершённым.
+                Почта понадобится для подтверждения.
               </p>
 
               <form className="auth-form" onSubmit={(event) => void handleRegisterSubmit(event)}>

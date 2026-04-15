@@ -7,6 +7,17 @@ type IllustrationRow = {
   image_base64: string;
 };
 
+type SessionRow = {
+  state_json: Partial<GameState>;
+  user_id: string | null;
+};
+
+export class SessionAccessError extends Error {
+  constructor() {
+    super("session is not available for this user");
+  }
+}
+
 function normalizeState(raw: Partial<GameState>, sessionId: string): GameState {
   const base = createNewState(sessionId);
 
@@ -91,22 +102,31 @@ function stripTransientMedia(state: GameState): GameState {
   };
 }
 
-export async function loadSession(sessionId: string): Promise<GameState | null> {
-  const sessionResult = await pool.query(
+export async function loadSession(
+  sessionId: string,
+  userId?: string
+): Promise<GameState | null> {
+  const sessionResult = await pool.query<SessionRow>(
     `
-      SELECT state_json
+      SELECT state_json, user_id
       FROM sessions
       WHERE id = $1
     `,
     [sessionId]
   );
 
-  if (sessionResult.rows.length === 0) {
+  const sessionRow = sessionResult.rows[0];
+
+  if (!sessionRow) {
     return null;
   }
 
+  if (userId && sessionRow.user_id && sessionRow.user_id !== userId) {
+    throw new SessionAccessError();
+  }
+
   const baseState = normalizeState(
-    sessionResult.rows[0].state_json as Partial<GameState>,
+    sessionRow.state_json,
     sessionId
   );
 
@@ -158,7 +178,7 @@ export async function upsertSession(
 ): Promise<void> {
   const stateWithoutMedia = stripTransientMedia(state);
 
-  await pool.query(
+  const result = await pool.query(
     `
       INSERT INTO sessions (id, user_id, state_json, updated_at)
       VALUES ($1, $2, $3, NOW())
@@ -166,24 +186,32 @@ export async function upsertSession(
         state_json = EXCLUDED.state_json,
         user_id = COALESCE(sessions.user_id, EXCLUDED.user_id),
         updated_at = NOW()
+      WHERE sessions.user_id IS NULL OR sessions.user_id = EXCLUDED.user_id
     `,
     [state.sessionId, ownerUserId ?? null, stateWithoutMedia]
   );
+
+  if (result.rowCount === 0) {
+    throw new SessionAccessError();
+  }
 }
 
 export async function attachSessionToUser(
   sessionId: string,
   userId: string
-): Promise<void> {
-  await pool.query(
+): Promise<boolean> {
+  const result = await pool.query(
     `
       UPDATE sessions
-      SET user_id = COALESCE(user_id, $2),
+      SET user_id = $2,
           updated_at = NOW()
       WHERE id = $1
+        AND (user_id IS NULL OR user_id = $2)
     `,
     [sessionId, userId]
   );
+
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function upsertTurnIllustration(params: {
