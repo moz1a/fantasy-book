@@ -51,7 +51,12 @@ export function ProfilePage({
   return (
     <main className="profile-screen">
       <div className="profile-shell">
-        <button className="auth-back" type="button" onClick={onBackToGame} disabled={!user}>
+        <button
+          className="auth-back"
+          type="button"
+          onClick={onBackToGame}
+          disabled={!user || !user.emailVerified}
+        >
           К книге
         </button>
 

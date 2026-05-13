@@ -5,6 +5,8 @@
 }
 
 .book-page {
+  --book-page-header-height: 28px;
+  --book-page-footer-height: 28px;
   position: relative;
   height: 100%;
   min-height: 0;
@@ -37,6 +39,7 @@
 }
 
 .book-page--left {
+  --book-page-footer-height: 0px;
   box-shadow: inset -15px 0 18px rgba(84, 54, 28, 0.16), inset 0 0 65px rgba(129, 86, 45, 0.16);
 }
 
@@ -74,6 +77,7 @@
   position: relative;
   z-index: 1;
   flex: 1 1 auto;
+  height: calc(100% - var(--book-page-header-height) - var(--book-page-footer-height));
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -81,21 +85,25 @@
   overflow: hidden;
 }
 
-.book-page__response::-webkit-scrollbar {
+.book-page__response::-webkit-scrollbar,
+.book-page__choices::-webkit-scrollbar {
   width: 6px;
 }
 
-.book-page__response::-webkit-scrollbar-track {
+.book-page__response::-webkit-scrollbar-track,
+.book-page__choices::-webkit-scrollbar-track {
   background: rgba(92, 59, 31, 0.08);
   border-radius: 999px;
 }
 
-.book-page__response::-webkit-scrollbar-thumb {
+.book-page__response::-webkit-scrollbar-thumb,
+.book-page__choices::-webkit-scrollbar-thumb {
   background: rgba(92, 59, 31, 0.35);
   border-radius: 999px;
 }
 
-.book-page__response::-webkit-scrollbar-thumb:hover {
+.book-page__response::-webkit-scrollbar-thumb:hover,
+.book-page__choices::-webkit-scrollbar-thumb:hover {
   background: rgba(92, 59, 31, 0.55);
 }
 
@@ -136,10 +144,17 @@
 }
 
 .book-page__choices {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding-right: 8px;
+  padding-bottom: 4px;
 }
 
 .book-page__action-spacer {
@@ -148,6 +163,7 @@
 }
 
 .book-page__choice-btn {
+  flex: 0 0 auto;
   width: 100%;
   text-align: left;
   border: 1px solid #8b5f36;
@@ -158,11 +174,11 @@
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease;
   font-size: 0.96rem;
+  overflow-wrap: anywhere;
 }
 
 .book-page__choice-btn.is-chosen {
-  outline: 2px solid #1fae06;
-  box-shadow: 0 0 10px rgba(157, 108, 12, 0.6);
+  border-color: #1fae06;
 }
 
 .book-page__choice-btn:hover:not(:disabled) {
@@ -176,11 +192,39 @@
 }
 
 .book-page__choices-empty {
+  flex: 0 0 auto;
   border: 1px dashed rgba(110, 72, 39, 0.45);
   border-radius: 8px;
   padding: 8px 10px;
   color: #7a4d28;
   font-size: 0.92rem;
+}
+
+.book-page__custom-action {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid #1fae06;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, #f4e5c5, #dfc28c);
+  color: #2d1a0b;
+}
+
+.book-page__custom-action-label {
+  color: #276316;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.book-page__custom-action-text {
+  font-size: 0.96rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 @media (max-width: 768px) {

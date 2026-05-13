@@ -105,6 +105,7 @@ export default function App() {
   const shouldAnimateToLastRef = useRef(false);
   const [illustrationLoadingTurnId, setIllustrationLoadingTurnId] = useState<string | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [verificationResendLoading, setVerificationResendLoading] = useState(false);
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window !== "undefined" ? window.innerWidth : 1440,
     height: typeof window !== "undefined" ? window.innerHeight : 900,
@@ -172,6 +173,17 @@ export default function App() {
     setAuthNotice(data.message ?? "Новая ссылка отправлена.");
   }, []);
 
+  const resendVerificationFromGate = useCallback(async () => {
+    if (verificationResendLoading) return;
+
+    setVerificationResendLoading(true);
+    try {
+      await handleResendVerification();
+    } finally {
+      setVerificationResendLoading(false);
+    }
+  }, [handleResendVerification, verificationResendLoading]);
+
   const saveSessionIdForCurrentUser = useCallback(
     (sessionId: string) => {
       if (!authUser) return;
@@ -216,6 +228,12 @@ export default function App() {
 
     if (!authUser) {
       setGameState(null);
+      return;
+    }
+
+    if (!authUser.emailVerified) {
+      setGameState(null);
+      setLoading(false);
       return;
     }
 
@@ -519,6 +537,42 @@ export default function App() {
     );
   }
 
+  if (!authUser.emailVerified) {
+    return (
+      <main className="auth-screen">
+        <div className="auth-shell">
+          <section className="auth-panel">
+            <div className="auth-panel__ornament">❦ ❦ ❦</div>
+            <p className="auth-panel__eyebrow">Почтовая печать</p>
+            <h1 className="auth-panel__title">Подтверди почту</h1>
+            <p className="auth-panel__lead">
+              Книга откроется после подтверждения адреса {authUser.email}. Проверь письмо и перейди по ссылке.
+            </p>
+
+            {authNotice && <div className="auth-form__notice">{authNotice}</div>}
+
+            <button
+              className="auth-form__submit"
+              type="button"
+              onClick={() => void resendVerificationFromGate()}
+              disabled={verificationResendLoading}
+            >
+              {verificationResendLoading ? "Отправляем..." : "Выслать ссылку ещё раз"}
+            </button>
+
+            <button
+              className="auth-panel__link"
+              type="button"
+              onClick={() => void handleLogout()}
+            >
+              Выйти
+            </button>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <div className="app">
       <div className="container">
@@ -591,6 +645,12 @@ export default function App() {
                     const isLast = index === spreads.length - 1;
                     const next = spreads[index + 1];
                     const selectedActionText = next && next.id !== "intro" ? next.action : "";
+                    const selectedChoiceExists = turn.choices.some(
+                      (choice) => choice.text === selectedActionText
+                    );
+                    const shouldShowCustomAction = Boolean(
+                      selectedActionText && !selectedChoiceExists
+                    );
                     return [
                       <div key={`left-${turn.id}`} className="book-page book-page--left">
                         <div className="book-page__header">
@@ -603,22 +663,33 @@ export default function App() {
 
                           <div className="book-page__choices">
                             {turn.choices.length > 0 ? (
-                              turn.choices.map((choice) => {
-                                const isChosen =
-                                  choice.text === selectedActionText ||
-                                  (pendingAction?.spreadId === turn.id && pendingAction.text === choice.text);
+                              <>
+                                {turn.choices.map((choice) => {
+                                  const isChosen =
+                                    choice.text === selectedActionText ||
+                                    (pendingAction?.spreadId === turn.id && pendingAction.text === choice.text);
 
-                                return (
-                                  <button
-                                    key={choice.id}
-                                    className={`book-page__choice-btn ${isChosen ? "is-chosen" : ""}`}
-                                    onClick={() => pickChoice(turn.id, choice.text)}
-                                    disabled={loading || !isLast}
-                                  >
-                                    {choice.text}
-                                  </button>
-                                );
-                              })
+                                  return (
+                                    <button
+                                      key={choice.id}
+                                      className={`book-page__choice-btn ${isChosen ? "is-chosen" : ""}`}
+                                      onClick={() => pickChoice(turn.id, choice.text)}
+                                      disabled={loading || !isLast}
+                                    >
+                                      {choice.text}
+                                    </button>
+                                  );
+                                })}
+
+                                {shouldShowCustomAction && (
+                                  <div className="book-page__custom-action">
+                                    <span className="book-page__custom-action-label">Свой ход</span>
+                                    <span className="book-page__custom-action-text">
+                                      {selectedActionText}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
                             ) : turn.id === "intro" && turns.length === 0 ? (
                               <button
                                 className="book-page__choice-btn book-page__choice-btn--start"
@@ -628,9 +699,18 @@ export default function App() {
                                 Проснуться
                               </button>
                             ) : (
-                              <div className="book-page__choices-empty">
-                                Игра началась. Перелистни на следующий лист →
-                              </div>
+                              shouldShowCustomAction ? (
+                                <div className="book-page__custom-action">
+                                  <span className="book-page__custom-action-label">Свой ход</span>
+                                  <span className="book-page__custom-action-text">
+                                    {selectedActionText}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="book-page__choices-empty">
+                                  Игра началась. Перелистни на следующий лист →
+                                </div>
+                              )
                             )}
                           </div>
 
