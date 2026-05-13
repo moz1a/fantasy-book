@@ -34,6 +34,7 @@ import {
   generateSceneIllustration,
 } from "./llm/yandexArt.js";
 import { parseAndNormalizeModelJson } from "./game/normalization.js";
+import { cloudChat } from "./llm/llmCloud.js";
 
 const app = express();
 
@@ -50,14 +51,18 @@ app.use(
   cors({
     credentials: true,
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes("*") ||
+        allowedOrigins.includes(origin)
+      ) {
         callback(null, true);
         return;
       }
 
       callback(null, false);
     },
-  })
+  }),
 );
 app.use(express.json());
 app.use("/auth", createAuthRouter());
@@ -93,7 +98,9 @@ app.get("/session/:id", requireAuth, async (req, res) => {
     res.json({ state });
   } catch (e: unknown) {
     if (e instanceof SessionAccessError) {
-      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      res
+        .status(403)
+        .json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
       return;
     }
 
@@ -104,16 +111,20 @@ app.get("/session/:id", requireAuth, async (req, res) => {
 });
 
 function formatPlayerForPrompt(player: GameState["player"]): string {
-  return JSON.stringify({
-    name: player.name,
-    hp: player.hp,
-    maxHp: player.maxHp,
-    gold: player.gold,
-    location: player.location,
-    inventory: player.inventory,
-    stats: player.stats,
-    effects: player.effects,
-  }, null, 2);
+  return JSON.stringify(
+    {
+      name: player.name,
+      hp: player.hp,
+      maxHp: player.maxHp,
+      gold: player.gold,
+      location: player.location,
+      inventory: player.inventory,
+      stats: player.stats,
+      effects: player.effects,
+    },
+    null,
+    2,
+  );
 }
 
 function normalizeStatsPatch(stats: Patch["stats"]): Patch["stats"] {
@@ -140,7 +151,9 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-function normalizeCombatPatch(combatPatch: CombatPatch | undefined): CombatPatch | undefined {
+function normalizeCombatPatch(
+  combatPatch: CombatPatch | undefined,
+): CombatPatch | undefined {
   if (!combatPatch) return undefined;
 
   const normalized: CombatPatch = {};
@@ -148,7 +161,10 @@ function normalizeCombatPatch(combatPatch: CombatPatch | undefined): CombatPatch
   if (typeof combatPatch.active === "boolean") {
     normalized.active = combatPatch.active;
   }
-  if (typeof combatPatch.enemyName === "string" && combatPatch.enemyName.trim()) {
+  if (
+    typeof combatPatch.enemyName === "string" &&
+    combatPatch.enemyName.trim()
+  ) {
     normalized.enemyName = combatPatch.enemyName.trim();
   }
   if (typeof combatPatch.enemyHp === "number") {
@@ -157,7 +173,10 @@ function normalizeCombatPatch(combatPatch: CombatPatch | undefined): CombatPatch
   if (typeof combatPatch.enemyMaxHp === "number") {
     normalized.enemyMaxHp = combatPatch.enemyMaxHp;
   }
-  if (typeof combatPatch.enemyIntent === "string" && combatPatch.enemyIntent.trim()) {
+  if (
+    typeof combatPatch.enemyIntent === "string" &&
+    combatPatch.enemyIntent.trim()
+  ) {
     normalized.enemyIntent = combatPatch.enemyIntent.trim();
   }
   if (combatPatch.distance) {
@@ -170,7 +189,9 @@ function normalizeCombatPatch(combatPatch: CombatPatch | undefined): CombatPatch
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
-function normalizeDirectorPatch(directorPatch: DirectorPatch | undefined): DirectorPatch | undefined {
+function normalizeDirectorPatch(
+  directorPatch: DirectorPatch | undefined,
+): DirectorPatch | undefined {
   if (!directorPatch) return undefined;
 
   const normalized: DirectorPatch = {};
@@ -178,7 +199,10 @@ function normalizeDirectorPatch(directorPatch: DirectorPatch | undefined): Direc
   if (directorPatch.sceneKind) {
     normalized.sceneKind = directorPatch.sceneKind;
   }
-  if (typeof directorPatch.sceneGoal === "string" && directorPatch.sceneGoal.trim()) {
+  if (
+    typeof directorPatch.sceneGoal === "string" &&
+    directorPatch.sceneGoal.trim()
+  ) {
     normalized.sceneGoal = directorPatch.sceneGoal.trim();
   }
   if (typeof directorPatch.tension === "number") {
@@ -206,18 +230,20 @@ function normalizeDirectorPatch(directorPatch: DirectorPatch | undefined): Direc
 function isPlayerPatchMeaningful(patch: Patch): boolean {
   return Boolean(
     patch.hp !== undefined ||
-      patch.maxHp !== undefined ||
-      patch.gold !== undefined ||
-      patch.location !== undefined ||
-      patch.stats !== undefined ||
-      patch.addItems?.length ||
-      patch.removeItems?.length ||
-      patch.addEffects?.length ||
-      patch.removeEffects?.length
+    patch.maxHp !== undefined ||
+    patch.gold !== undefined ||
+    patch.location !== undefined ||
+    patch.stats !== undefined ||
+    patch.addItems?.length ||
+    patch.removeItems?.length ||
+    patch.addEffects?.length ||
+    patch.removeEffects?.length,
   );
 }
 
-function isCombatPatchMeaningful(combatPatch: CombatPatch | undefined): boolean {
+function isCombatPatchMeaningful(
+  combatPatch: CombatPatch | undefined,
+): boolean {
   return Boolean(combatPatch && Object.keys(combatPatch).length > 0);
 }
 
@@ -245,7 +271,8 @@ app.post("/turn", requireAuth, async (req, res) => {
       return;
     }
 
-    let state: GameState = (await loadSession(sessionId, authUser.id)) ?? createNewState(sessionId);
+    let state: GameState =
+      (await loadSession(sessionId, authUser.id)) ?? createNewState(sessionId);
 
     const pacing = buildPacingFlags(state);
 
@@ -319,13 +346,13 @@ app.post("/turn", requireAuth, async (req, res) => {
       "Если изменений нет, верни patch как {}.",
     ].join("\n\n");
 
-    const llm = await elizaChat({
+    const llm = await cloudChat({
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
       ],
       temperature: 0.5,
-      max_tokens: 600,
+      max_tokens: 3600,
     });
 
     if (typeof llm.content !== "string" || !llm.content.trim()) {
@@ -341,7 +368,8 @@ app.post("/turn", requireAuth, async (req, res) => {
       normalizedText = result.normalizedText;
       normalizedObject = result.normalizedObject;
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed to parse model JSON";
+      const message =
+        e instanceof Error ? e.message : "Failed to parse model JSON";
       res.status(502).json({
         error: message,
         rawContent: llm.content,
@@ -391,7 +419,8 @@ app.post("/turn", requireAuth, async (req, res) => {
     const nextStats = {
       strength: patch.stats?.strength ?? state.player.stats.strength,
       agility: patch.stats?.agility ?? state.player.stats.agility,
-      intelligence: patch.stats?.intelligence ?? state.player.stats.intelligence,
+      intelligence:
+        patch.stats?.intelligence ?? state.player.stats.intelligence,
     };
 
     const nextMaxHp = Math.max(1, patch.maxHp ?? state.player.maxHp);
@@ -441,7 +470,8 @@ app.post("/turn", requireAuth, async (req, res) => {
 
     const threads = new Set(state.director.unresolvedThreads);
     for (const thread of directorPatch?.addThreads ?? []) threads.add(thread);
-    for (const thread of directorPatch?.removeThreads ?? []) threads.delete(thread);
+    for (const thread of directorPatch?.removeThreads ?? [])
+      threads.delete(thread);
 
     const meaningfulProgress =
       isPlayerPatchMeaningful(patch) ||
@@ -454,13 +484,16 @@ app.post("/turn", requireAuth, async (req, res) => {
     const nextDirector = {
       ...state.director,
       turnNumber: nextTurnNumber,
-      sceneKind: directorPatch?.sceneKind ?? (combatActive ? "combat" : state.director.sceneKind),
+      sceneKind:
+        directorPatch?.sceneKind ??
+        (combatActive ? "combat" : state.director.sceneKind),
       sceneGoal: directorPatch?.sceneGoal ?? state.director.sceneGoal,
       tension: clamp(
         directorPatch?.tension ??
-          state.director.tension + (combatActive ? 12 : pacing.forceMajorEvent ? 8 : 3),
+          state.director.tension +
+            (combatActive ? 12 : pacing.forceMajorEvent ? 8 : 3),
         0,
-        100
+        100,
       ),
       lastMajorEventTurn:
         directorPatch?.lastMajorEventTurn ??
@@ -498,7 +531,9 @@ app.post("/turn", requireAuth, async (req, res) => {
     res.json({ state });
   } catch (e: unknown) {
     if (e instanceof SessionAccessError) {
-      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      res
+        .status(403)
+        .json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
       return;
     }
 
@@ -525,7 +560,9 @@ app.post("/session/:id/claim", requireAuth, async (req, res) => {
   try {
     const attached = await attachSessionToUser(sessionId, authUser.id);
     if (!attached) {
-      res.status(404).json({ error: "session not found or unavailable", sessionId });
+      res
+        .status(404)
+        .json({ error: "session not found or unavailable", sessionId });
       return;
     }
 
@@ -539,7 +576,9 @@ app.post("/session/:id/claim", requireAuth, async (req, res) => {
     res.json({ state });
   } catch (e: unknown) {
     if (e instanceof SessionAccessError) {
-      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      res
+        .status(403)
+        .json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
       return;
     }
 
@@ -611,7 +650,9 @@ app.post("/illustration", requireAuth, async (req, res) => {
     const updatedState = await loadSession(sessionId, authUser.id);
 
     if (!updatedState) {
-      res.status(500).json({ error: "failed to reload session after saving illustration" });
+      res
+        .status(500)
+        .json({ error: "failed to reload session after saving illustration" });
       return;
     }
 
@@ -622,7 +663,9 @@ app.post("/illustration", requireAuth, async (req, res) => {
     });
   } catch (e: unknown) {
     if (e instanceof SessionAccessError) {
-      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      res
+        .status(403)
+        .json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
       return;
     }
 
@@ -661,9 +704,9 @@ app.post("/character/avatar", requireAuth, async (req, res) => {
         : "Состояний нет.",
     ].join(" ");
 
-const imageUrl = await generateCharacterPortrait({
-  description: portraitDescription,
-});
+    const imageUrl = await generateCharacterPortrait({
+      description: portraitDescription,
+    });
 
     const { mimeType, base64 } = parseDataUrl(imageUrl);
 
@@ -676,7 +719,11 @@ const imageUrl = await generateCharacterPortrait({
     const updatedState = await loadSession(sessionId, authUser.id);
 
     if (!updatedState) {
-      res.status(500).json({ error: "failed to reload session after saving character portrait" });
+      res
+        .status(500)
+        .json({
+          error: "failed to reload session after saving character portrait",
+        });
       return;
     }
 
@@ -686,7 +733,9 @@ const imageUrl = await generateCharacterPortrait({
     });
   } catch (e: unknown) {
     if (e instanceof SessionAccessError) {
-      res.status(403).json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
+      res
+        .status(403)
+        .json({ error: "Эта игровая сессия принадлежит другому аккаунту." });
       return;
     }
 
@@ -705,11 +754,8 @@ function buildPacingFlags(state: GameState) {
     nextTurn,
     forceMajorEvent: turnsSinceMajorEvent >= 4,
     forceCombat:
-      !state.combat.active &&
-      turnsSinceCombat >= 5 &&
-      state.player.hp > 2,
-    forceResolution:
-      state.combat.active && state.combat.phase === "exchange",
+      !state.combat.active && turnsSinceCombat >= 5 && state.player.hp > 2,
+    forceResolution: state.combat.active && state.combat.phase === "exchange",
   };
 }
 

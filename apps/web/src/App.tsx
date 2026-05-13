@@ -661,7 +661,15 @@ export default function App() {
 
                         <div className="book-page__body">
                           <h2 className="book-page__running-title">Ответ мастера</h2>
-                          <div className="book-page__response">{turn.narrative}</div>
+                          <div
+                            className="book-page__response"
+                            onWheel={(event) => event.stopPropagation()}
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onTouchStart={(event) => event.stopPropagation()}
+                          >
+                            {turn.narrative}
+                          </div>
 
                           {turn.id !== "intro" && (
                             <div className="book-page__illustration-block">

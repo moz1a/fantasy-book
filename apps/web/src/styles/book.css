@@ -7,6 +7,7 @@
 .book-page {
   position: relative;
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   color: #2b1707;
@@ -47,6 +48,7 @@
 .book-page__footer {
   position: relative;
   z-index: 1;
+  flex: 0 0 28px;
   height: 28px;
   display: flex;
   align-items: center;
@@ -71,12 +73,30 @@
 .book-page__body {
   position: relative;
   z-index: 1;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding: 12px 14px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
+}
+
+.book-page__response::-webkit-scrollbar {
+  width: 6px;
+}
+
+.book-page__response::-webkit-scrollbar-track {
+  background: rgba(92, 59, 31, 0.08);
+  border-radius: 999px;
+}
+
+.book-page__response::-webkit-scrollbar-thumb {
+  background: rgba(92, 59, 31, 0.35);
+  border-radius: 999px;
+}
+
+.book-page__response::-webkit-scrollbar-thumb:hover {
+  background: rgba(92, 59, 31, 0.55);
 }
 
 .book-page__running-title {
@@ -95,10 +115,18 @@
 }
 
 .book-page__response {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   white-space: pre-wrap;
   line-height: 1.58;
   font-size: 1rem;
   text-align: justify;
+  padding-right: 8px;
+  padding-bottom: 12px;
 }
 
 .book-page__choice-prompt {
@@ -170,7 +198,7 @@
 }
 
 .book-page__illustration-block {
-  margin-top: auto;
+  flex: 0 0 auto;
   padding-top: 12px;
   display: flex;
   flex-direction: column;

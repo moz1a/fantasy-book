@@ -4,10 +4,11 @@ import { schema } from "./schema.js";
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 const key = process.env.API_KEY_YANDEX;
+const folder = process.env.YANDEX_FOLDER_ID;
 
 const openai = new OpenAI({
   apiKey: key,
-  project: "b1gpb299og85fel0e7ea",
+  project: folder,
   baseURL: "https://ai.api.cloud.yandex.net/v1",
 });
 
@@ -18,8 +19,7 @@ export async function cloudChat(params: {
 }) {
   const completion = await openai.chat.completions.create({
     messages: params.messages,
-    model: "gpt://b1gpb299og85fel0e7ea/aliceai-llm/latest",
-    max_tokens: params.max_tokens ?? 400,
+    model: `gpt://${folder}/qwen3.6-35b-a3b/latest`,
     temperature: params.temperature ?? 0.4,
     response_format: {
       type: "json_schema",
