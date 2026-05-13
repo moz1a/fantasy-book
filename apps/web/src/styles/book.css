@@ -155,6 +155,7 @@
   scrollbar-gutter: stable;
   padding-right: 8px;
   padding-bottom: 4px;
+  padding-top: 2px;
 }
 
 .book-page__action-spacer {
